@@ -8,8 +8,8 @@
 #pragma once
 
 #include <complex>
-#include <map>
 #include <iosfwd>
+#include <map>
 #include <memory>
 
 namespace cmath {
@@ -21,11 +21,11 @@ using Symbol = char;
 using SymbolTable = std::map<Symbol, Expr*>;
 
 enum class Precedence {
-  Relation,         // < > <= >= != =
-  Addition,         // + -
-  Multiplication,   // * / !
-  Power,            // ^
-  Number,           // 42
+  Relation,        // < > <= >= != =
+  Addition,        // + -
+  Multiplication,  // * / !
+  Power,           // ^
+  Number,          // 42
 };
 
 class Expr {
@@ -105,4 +105,4 @@ class NumberExpr : public Expr {
 std::ostream& operator<<(std::ostream& os, const Expr* expr);
 std::ostream& operator<<(std::ostream& os, const Expr& expr);
 
-} // namespace cmath
+}  // namespace cmath
