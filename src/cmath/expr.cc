@@ -45,19 +45,31 @@ Number NumberExpr::calculate(const SymbolTable& /*t*/) const {
 }
 // }}}
 // {{{ BinaryExpr
-BinaryExpr::BinaryExpr(Precedence p, Expr* left, Expr* right)
-    : Expr(p), left_(left), right_(right) {
+BinaryExpr::BinaryExpr(Precedence p, char op, Expr* left, Expr* right)
+    : Expr(p), operator_(op), left_(left), right_(right) {
+}
+
+std::string BinaryExpr::str() const {
+  std::stringstream s;
+
+  if (left_->precedence() < precedence())
+    s << '(' << *left_ << ')';
+  else
+    s << *left_;
+
+  s << operator_;
+
+  if (right_->precedence() < precedence())
+    s << '(' << *right_ << ')';
+  else
+    s << *right_;
+
+  return s.str();
 }
 // }}}
 // {{{ PlusExpr
 PlusExpr::PlusExpr(Expr* left, Expr* right)
-    : BinaryExpr(Precedence::Addition, left, right) {
-}
-
-std::string PlusExpr::str() const {
-  std::stringstream s;
-  s << *left_ << "+" << *right_;
-  return s.str();
+    : BinaryExpr(Precedence::Addition, '+', left, right) {
 }
 
 Number PlusExpr::calculate(const SymbolTable& t) const {
@@ -66,13 +78,7 @@ Number PlusExpr::calculate(const SymbolTable& t) const {
 // }}}
 // {{{ MinusExpr
 MinusExpr::MinusExpr(Expr* left, Expr* right)
-    : BinaryExpr(Precedence::Addition, left, right) {
-}
-
-std::string MinusExpr::str() const {
-  std::stringstream s;
-  s << *left_ << "-" << *right_;
-  return s.str();
+    : BinaryExpr(Precedence::Addition, '-', left, right) {
 }
 
 Number MinusExpr::calculate(const SymbolTable& t) const {
@@ -81,13 +87,7 @@ Number MinusExpr::calculate(const SymbolTable& t) const {
 // }}}
 // {{{ MulExpr
 MulExpr::MulExpr(Expr* left, Expr* right)
-    : BinaryExpr(Precedence::Multiplication, left, right) {
-}
-
-std::string MulExpr::str() const {
-  std::stringstream s;
-  s << *left_ << "+" << *right_;
-  return s.str();
+    : BinaryExpr(Precedence::Multiplication, '*', left, right) {
 }
 
 Number MulExpr::calculate(const SymbolTable& t) const {
@@ -96,13 +96,7 @@ Number MulExpr::calculate(const SymbolTable& t) const {
 // }}}
 // {{{ DivExpr
 DivExpr::DivExpr(Expr* left, Expr* right)
-    : BinaryExpr(Precedence::Multiplication, left, right) {
-}
-
-std::string DivExpr::str() const {
-  std::stringstream s;
-  s << *left_ << "+" << *right_;
-  return s.str();
+    : BinaryExpr(Precedence::Multiplication, '/', left, right) {
 }
 
 Number DivExpr::calculate(const SymbolTable& t) const {
@@ -111,13 +105,7 @@ Number DivExpr::calculate(const SymbolTable& t) const {
 // }}}
 // {{{ PowExpr
 PowExpr::PowExpr(Expr* left, Expr* right)
-    : BinaryExpr(Precedence::Multiplication, left, right) {
-}
-
-std::string PowExpr::str() const {
-  std::stringstream s;
-  s << *left_ << "+" << *right_;
-  return s.str();
+    : BinaryExpr(Precedence::Multiplication, '^', left, right) {
 }
 
 Number PowExpr::calculate(const SymbolTable& t) const {

@@ -11,8 +11,9 @@
 using namespace cmath;
 
 int main(int argc, const char* argv[]) {
-  std::unique_ptr<Expr> e(new PlusExpr(new NumberExpr(42), new NumberExpr(3)));
   SymbolTable symbols;
+  std::unique_ptr<Expr> e(
+      new MulExpr(new NumberExpr(2), new PlusExpr(new NumberExpr(3), new NumberExpr(1))));
 
   std::cout << "Expression : " << e->str() << '\n';
   std::cout << "Result     : " << e->calculate(symbols) << '\n';
