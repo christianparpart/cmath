@@ -1,0 +1,14 @@
+/build
+/sandbox/
+
+# autotools
+Makefile.in
+/ar-lib
+/aclocal.m4
+/compile
+/autom4te.cache
+/configure
+/install-sh
+/missing
+/depcomp
+/src/cmath/sysconfig.h.in
