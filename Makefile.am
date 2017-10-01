@@ -27,7 +27,8 @@ AM_LDFLAGS = \
 lib_LIBRARIES += libcmath.a
 
 libcmath_a_SOURCES = \
-	src/cmath/expr.cc
+	src/cmath/expr.cc \
+	src/cmath/expr_parser.cc
 
 libcmathdir = $(includedir)
 nobase_libcmath_HEADERS = \

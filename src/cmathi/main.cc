@@ -20,12 +20,21 @@ int main(int argc, const char* argv[]) {
       std::make_unique<PlusExpr>(std::make_unique<NumberExpr>(3),
                                  std::make_unique<NumberExpr>(1)));
 
-  for (const auto& e : symbols) {
+  for (const auto& e : symbols)
     std::cout << e.first << " = " << e.second->str() << std::endl;
-  }
 
   const auto& a = symbols['a'];
   std::cout << "Expression : " << a->str() << '\n';
   std::cout << "Result     : " << a->calculate(symbols) << '\n';
+
+  if (argc > 1) {
+    Result<std::unique_ptr<Expr>> e = ExprParser().parse(argv[1]);
+    if (!e) {
+      std::cout << e.error().category().name() << ": " << e.error().message() << '\n';
+      return 1;
+    }
+    std::cout << "Expression : " << (*e)->str() << '\n';
+  }
+
   return 0;
 }
