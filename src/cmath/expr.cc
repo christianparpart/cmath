@@ -5,11 +5,11 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
+#include <assert.h>
 #include <cmath/expr.h>
 #include <cmath>
 #include <iostream>
 #include <sstream>
-#include <assert.h>
 
 namespace cmath {
 
@@ -40,6 +40,28 @@ std::string NumberExpr::str() const {
 
 Number NumberExpr::calculate(const SymbolTable& /*t*/) const {
   return literal_;
+}
+// }}}
+// {{{ NegExpr
+NegExpr::NegExpr(std::unique_ptr<Expr>&& e)
+    : Expr(Precedence::Number), subExpr_(std::move(e)) {}
+
+std::string NegExpr::str() const {
+  std::stringstream s;
+
+  s << '-';
+
+  if (subExpr_->precedence() < precedence()) {
+    s << '(' << subExpr_->str() << ')';
+  } else {
+    s << subExpr_->str();
+  }
+
+  return s.str();
+}  // namespace cmath
+
+Number NegExpr::calculate(const SymbolTable& t) const {
+  return -subExpr_->calculate(t);
 }
 // }}}
 // {{{ SymbolExpr

@@ -53,6 +53,17 @@ class NumberExpr : public Expr {
   Number literal_;
 };
 
+class NegExpr : public Expr {
+ public:
+  explicit NegExpr(std::unique_ptr<Expr>&& e);
+
+  std::string str() const override;
+  Number calculate(const SymbolTable& t) const override;
+
+ private:
+  std::unique_ptr<Expr> subExpr_;
+};
+
 class SymbolExpr : public Expr {
  public:
   explicit SymbolExpr(Symbol n);

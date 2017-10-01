@@ -89,10 +89,14 @@ std::unique_ptr<Expr> ExprParser::powExpr() {
 std::unique_ptr<Expr> ExprParser::primaryExpr() {
   switch (currentToken()) {
     case Token::RndOpen: {
-      nextToken();  // skip '('
+      nextToken();
       auto e = expr();
       consumeToken(Token::RndClose);
       return e;
+    }
+    case Token::Minus: {
+      nextToken();
+      return std::make_unique<NegExpr>(primaryExpr());
     }
     case Token::Number: {
       auto e = std::make_unique<NumberExpr>(currentNumber_);
