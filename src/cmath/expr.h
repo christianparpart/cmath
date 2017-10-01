@@ -18,14 +18,14 @@ class Expr;
 
 using Number = std::complex<double>;
 using Symbol = char;
-using SymbolTable = std::map<Symbol, Expr*>;
+using SymbolTable = std::map<Symbol, std::unique_ptr<Expr>>;
 
 enum class Precedence {
   Relation,        // < > <= >= != =
   Addition,        // + -
   Multiplication,  // * / !
   Power,           // ^
-  Number,          // 42
+  Number,          // 42 x a b
 };
 
 class Expr {
@@ -42,9 +42,34 @@ class Expr {
   Precedence precedence_;
 };
 
+class NumberExpr : public Expr {
+ public:
+  explicit NumberExpr(Number n);
+
+  std::string str() const override;
+  Number calculate(const SymbolTable& t) const override;
+
+ private:
+  Number literal_;
+};
+
+class SymbolExpr : public Expr {
+ public:
+  explicit SymbolExpr(Symbol n);
+
+  std::string str() const override;
+  Number calculate(const SymbolTable& t) const override;
+
+ private:
+  Symbol symbol_;
+};
+
 class BinaryExpr : public Expr {
  public:
-  BinaryExpr(Precedence p, char op, Expr* left, Expr* right);
+  BinaryExpr(Precedence p,
+             char op,
+             std::unique_ptr<Expr>&& left,
+             std::unique_ptr<Expr>&& right);
 
   std::string str() const override;
 
@@ -56,48 +81,37 @@ class BinaryExpr : public Expr {
 
 class PlusExpr : public BinaryExpr {
  public:
-  PlusExpr(Expr* left, Expr* right);
+  PlusExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right);
 
   Number calculate(const SymbolTable& t) const override;
 };
 
 class MinusExpr : public BinaryExpr {
  public:
-  MinusExpr(Expr* left, Expr* right);
+  MinusExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right);
 
   Number calculate(const SymbolTable& t) const override;
 };
 
 class MulExpr : public BinaryExpr {
  public:
-  MulExpr(Expr* left, Expr* right);
+  MulExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right);
 
   Number calculate(const SymbolTable& t) const override;
 };
 
 class DivExpr : public BinaryExpr {
  public:
-  DivExpr(Expr* left, Expr* right);
+  DivExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right);
 
   Number calculate(const SymbolTable& t) const override;
 };
 
 class PowExpr : public BinaryExpr {
  public:
-  PowExpr(Expr* left, Expr* right);
+  PowExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right);
 
   Number calculate(const SymbolTable& t) const override;
-};
-
-class NumberExpr : public Expr {
- public:
-  explicit NumberExpr(Number n);
-
-  std::string str() const override;
-  Number calculate(const SymbolTable& t) const override;
-
- private:
-  Number literal_;
 };
 
 std::ostream& operator<<(std::ostream& os, const Expr* expr);

@@ -6,16 +6,26 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <cmath/expr.h>
+#include <cmath/expr_parser.h>
 #include <iostream>
 
 using namespace cmath;
 
 int main(int argc, const char* argv[]) {
   SymbolTable symbols;
-  std::unique_ptr<Expr> e(
-      new MulExpr(new NumberExpr(2), new PlusExpr(new NumberExpr(3), new NumberExpr(1))));
 
-  std::cout << "Expression : " << e->str() << '\n';
-  std::cout << "Result     : " << e->calculate(symbols) << '\n';
+  symbols['x'] = std::make_unique<NumberExpr>(2);
+  symbols['a'] = std::make_unique<MulExpr>(
+      std::make_unique<SymbolExpr>('x'),
+      std::make_unique<PlusExpr>(std::make_unique<NumberExpr>(3),
+                                 std::make_unique<NumberExpr>(1)));
+
+  for (const auto& e : symbols) {
+    std::cout << e.first << " = " << e.second->str() << std::endl;
+  }
+
+  const auto& a = symbols['a'];
+  std::cout << "Expression : " << a->str() << '\n';
+  std::cout << "Result     : " << a->calculate(symbols) << '\n';
   return 0;
 }

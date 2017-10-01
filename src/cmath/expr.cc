@@ -6,9 +6,10 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <cmath/expr.h>
+#include <cmath>
 #include <iostream>
 #include <sstream>
-#include <cmath>
+#include <assert.h>
 
 namespace cmath {
 
@@ -22,13 +23,10 @@ std::ostream& operator<<(std::ostream& os, const Expr& expr) {
 }
 
 // {{{ Expr
-Expr::Expr(Precedence p) : precedence_(p) {
-}
+Expr::Expr(Precedence p) : precedence_(p) {}
 // }}}
 // {{{ NumberExpr
-NumberExpr::NumberExpr(Number n)
-    : Expr(Precedence::Number), literal_(n) {
-}
+NumberExpr::NumberExpr(Number n) : Expr(Precedence::Number), literal_(n) {}
 
 std::string NumberExpr::str() const {
   std::stringstream s;
@@ -44,10 +42,30 @@ Number NumberExpr::calculate(const SymbolTable& /*t*/) const {
   return literal_;
 }
 // }}}
-// {{{ BinaryExpr
-BinaryExpr::BinaryExpr(Precedence p, char op, Expr* left, Expr* right)
-    : Expr(p), operator_(op), left_(left), right_(right) {
+// {{{ SymbolExpr
+SymbolExpr::SymbolExpr(Symbol s) : Expr(Precedence::Number), symbol_(s) {}
+
+std::string SymbolExpr::str() const {
+  std::stringstream s;
+  s << symbol_;
+  return s.str();
 }
+
+Number SymbolExpr::calculate(const SymbolTable& t) const {
+  assert(t.find(symbol_) != t.end());
+  auto i = t.find(symbol_);
+  if (i != t.end())
+    return i->second->calculate(t);
+  else
+    return 0;
+}
+// }}}
+// {{{ BinaryExpr
+BinaryExpr::BinaryExpr(Precedence p,
+                       char op,
+                       std::unique_ptr<Expr>&& left,
+                       std::unique_ptr<Expr>&& right)
+    : Expr(p), operator_(op), left_(std::move(left)), right_(std::move(right)) {}
 
 std::string BinaryExpr::str() const {
   std::stringstream s;
@@ -68,45 +86,40 @@ std::string BinaryExpr::str() const {
 }
 // }}}
 // {{{ PlusExpr
-PlusExpr::PlusExpr(Expr* left, Expr* right)
-    : BinaryExpr(Precedence::Addition, '+', left, right) {
-}
+PlusExpr::PlusExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
+    : BinaryExpr(Precedence::Addition, '+', std::move(left), std::move(right)) {}
 
 Number PlusExpr::calculate(const SymbolTable& t) const {
   return left_->calculate(t) + right_->calculate(t);
 }
 // }}}
 // {{{ MinusExpr
-MinusExpr::MinusExpr(Expr* left, Expr* right)
-    : BinaryExpr(Precedence::Addition, '-', left, right) {
-}
+MinusExpr::MinusExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
+    : BinaryExpr(Precedence::Addition, '-', std::move(left), std::move(right)) {}
 
 Number MinusExpr::calculate(const SymbolTable& t) const {
   return left_->calculate(t) - right_->calculate(t);
 }
 // }}}
 // {{{ MulExpr
-MulExpr::MulExpr(Expr* left, Expr* right)
-    : BinaryExpr(Precedence::Multiplication, '*', left, right) {
-}
+MulExpr::MulExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
+    : BinaryExpr(Precedence::Multiplication, '*', std::move(left), std::move(right)) {}
 
 Number MulExpr::calculate(const SymbolTable& t) const {
   return left_->calculate(t) * right_->calculate(t);
 }
 // }}}
 // {{{ DivExpr
-DivExpr::DivExpr(Expr* left, Expr* right)
-    : BinaryExpr(Precedence::Multiplication, '/', left, right) {
-}
+DivExpr::DivExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
+    : BinaryExpr(Precedence::Multiplication, '/', std::move(left), std::move(right)) {}
 
 Number DivExpr::calculate(const SymbolTable& t) const {
   return left_->calculate(t) / right_->calculate(t);
 }
 // }}}
 // {{{ PowExpr
-PowExpr::PowExpr(Expr* left, Expr* right)
-    : BinaryExpr(Precedence::Multiplication, '^', left, right) {
-}
+PowExpr::PowExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
+    : BinaryExpr(Precedence::Multiplication, '^', std::move(left), std::move(right)) {}
 
 Number PowExpr::calculate(const SymbolTable& t) const {
   Number a = left_->calculate(t);
@@ -115,4 +128,4 @@ Number PowExpr::calculate(const SymbolTable& t) const {
 }
 // }}}
 
-} // namespace cmath
+}  // namespace cmath
