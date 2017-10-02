@@ -42,6 +42,8 @@ class ExprParser {
     Fac,
     RndOpen,
     RndClose,
+    Define,       // :=
+    Equivalence,  // <=>
   };  // }}}
 
   bool eof() const { return currentPosition_ == expression_.end(); }

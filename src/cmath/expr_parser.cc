@@ -150,6 +150,36 @@ ExprParser::Token ExprParser::nextToken() {
     case ')':
       currentPosition_++;
       return currentToken_ = Token::RndClose;
+    case ':':
+      currentPosition_++;
+      if (!eof() && *currentPosition_ == '=') {
+        currentPosition_++;
+        return currentToken_ = Token::Define;
+      } else {
+        throw make_error_code(UnexpectedCharacter);
+      }
+    case '<':
+      // < <= <=>
+      currentPosition_++;
+      if (!eof() && *currentPosition_ == '=') {
+        currentPosition_++;
+        if (!eof() && *currentPosition_ == '>') {
+          currentPosition_++;
+          return currentToken_ = Token::Equivalence;
+        } else {
+          return currentToken_ = Token::LessEqu;
+        }
+      } else {
+        return currentToken_ = Token::Less;
+      }
+    case '>':
+      // > >=
+      if (!eof() && *currentPosition_ == '=') {
+        currentPosition_++;
+        return currentToken_ = Token::GreaterEqu;
+      } else {
+        return currentToken_ = Token::Greater;
+      }
     default:
       break;
   }
