@@ -54,7 +54,6 @@ class ExprParser {
   std::unique_ptr<Expr> addExpr();      // + -
   std::unique_ptr<Expr> mulExpr();      // * /
   std::unique_ptr<Expr> powExpr();      // ^
-  std::unique_ptr<Expr> negExpr();      // -
   std::unique_ptr<Expr> primaryExpr();  // number symbol ( ! -
 
  private:

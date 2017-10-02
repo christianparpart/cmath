@@ -37,6 +37,8 @@ class Expr {
 
   virtual std::string str() const = 0;
   virtual Number calculate(const SymbolTable& t) const = 0;
+  virtual std::unique_ptr<Expr> clone() const = 0;
+  virtual bool compare(const Expr* other) const = 0;
 
  protected:
   Precedence precedence_;
@@ -48,6 +50,8 @@ class NumberExpr : public Expr {
 
   std::string str() const override;
   Number calculate(const SymbolTable& t) const override;
+  std::unique_ptr<Expr> clone() const override;
+  bool compare(const Expr* other) const override;
 
  private:
   Number literal_;
@@ -59,6 +63,8 @@ class NegExpr : public Expr {
 
   std::string str() const override;
   Number calculate(const SymbolTable& t) const override;
+  std::unique_ptr<Expr> clone() const override;
+  bool compare(const Expr* other) const override;
 
  private:
   std::unique_ptr<Expr> subExpr_;
@@ -70,6 +76,8 @@ class SymbolExpr : public Expr {
 
   std::string str() const override;
   Number calculate(const SymbolTable& t) const override;
+  std::unique_ptr<Expr> clone() const override;
+  bool compare(const Expr* other) const override;
 
  private:
   Symbol symbol_;
@@ -95,6 +103,8 @@ class PlusExpr : public BinaryExpr {
   PlusExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right);
 
   Number calculate(const SymbolTable& t) const override;
+  std::unique_ptr<Expr> clone() const override;
+  bool compare(const Expr* other) const override;
 };
 
 class MinusExpr : public BinaryExpr {
@@ -102,6 +112,8 @@ class MinusExpr : public BinaryExpr {
   MinusExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right);
 
   Number calculate(const SymbolTable& t) const override;
+  std::unique_ptr<Expr> clone() const override;
+  bool compare(const Expr* other) const override;
 };
 
 class MulExpr : public BinaryExpr {
@@ -109,6 +121,8 @@ class MulExpr : public BinaryExpr {
   MulExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right);
 
   Number calculate(const SymbolTable& t) const override;
+  std::unique_ptr<Expr> clone() const override;
+  bool compare(const Expr* other) const override;
 };
 
 class DivExpr : public BinaryExpr {
@@ -116,6 +130,8 @@ class DivExpr : public BinaryExpr {
   DivExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right);
 
   Number calculate(const SymbolTable& t) const override;
+  std::unique_ptr<Expr> clone() const override;
+  bool compare(const Expr* other) const override;
 };
 
 class PowExpr : public BinaryExpr {
@@ -123,6 +139,8 @@ class PowExpr : public BinaryExpr {
   PowExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right);
 
   Number calculate(const SymbolTable& t) const override;
+  std::unique_ptr<Expr> clone() const override;
+  bool compare(const Expr* other) const override;
 };
 
 std::ostream& operator<<(std::ostream& os, const Expr* expr);

@@ -41,6 +41,17 @@ std::string NumberExpr::str() const {
 Number NumberExpr::calculate(const SymbolTable& /*t*/) const {
   return literal_;
 }
+
+std::unique_ptr<Expr> NumberExpr::clone() const {
+  return std::make_unique<NumberExpr>(literal_);
+}
+
+bool NumberExpr::compare(const Expr* other) const {
+  if (auto e = dynamic_cast<const NumberExpr*>(other))
+    return e->literal_ == literal_;
+
+  return false;
+}
 // }}}
 // {{{ NegExpr
 NegExpr::NegExpr(std::unique_ptr<Expr>&& e)
@@ -63,6 +74,17 @@ std::string NegExpr::str() const {
 Number NegExpr::calculate(const SymbolTable& t) const {
   return -subExpr_->calculate(t);
 }
+
+std::unique_ptr<Expr> NegExpr::clone() const {
+  return std::make_unique<NegExpr>(subExpr_->clone());
+}
+
+bool NegExpr::compare(const Expr* other) const {
+  if (auto e = dynamic_cast<const NegExpr*>(other))
+    return e->compare(subExpr_.get());
+
+  return false;
+}
 // }}}
 // {{{ SymbolExpr
 SymbolExpr::SymbolExpr(Symbol s) : Expr(Precedence::Number), symbol_(s) {}
@@ -80,6 +102,17 @@ Number SymbolExpr::calculate(const SymbolTable& t) const {
     return i->second->calculate(t);
   else
     return 0;
+}
+
+std::unique_ptr<Expr> SymbolExpr::clone() const {
+  return std::make_unique<SymbolExpr>(symbol_);
+}
+
+bool SymbolExpr::compare(const Expr* other) const {
+  if (auto e = dynamic_cast<const SymbolExpr*>(other))
+    return e->symbol_ == symbol_;
+
+  return false;
 }
 // }}}
 // {{{ BinaryExpr
@@ -114,6 +147,17 @@ PlusExpr::PlusExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
 Number PlusExpr::calculate(const SymbolTable& t) const {
   return left_->calculate(t) + right_->calculate(t);
 }
+
+std::unique_ptr<Expr> PlusExpr::clone() const {
+  return std::make_unique<PlusExpr>(left_->clone(), right_->clone());
+}
+
+bool PlusExpr::compare(const Expr* other) const {
+  if (auto e = dynamic_cast<const PlusExpr*>(other))
+    return e->left_->compare(left_.get()) && e->right_->compare(right_.get());
+
+  return false;
+}
 // }}}
 // {{{ MinusExpr
 MinusExpr::MinusExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
@@ -121,6 +165,17 @@ MinusExpr::MinusExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right
 
 Number MinusExpr::calculate(const SymbolTable& t) const {
   return left_->calculate(t) - right_->calculate(t);
+}
+
+std::unique_ptr<Expr> MinusExpr::clone() const {
+  return std::make_unique<MinusExpr>(left_->clone(), right_->clone());
+}
+
+bool MinusExpr::compare(const Expr* other) const {
+  if (auto e = dynamic_cast<const MinusExpr*>(other))
+    return e->left_->compare(left_.get()) && e->right_->compare(right_.get());
+
+  return false;
 }
 // }}}
 // {{{ MulExpr
@@ -130,6 +185,17 @@ MulExpr::MulExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
 Number MulExpr::calculate(const SymbolTable& t) const {
   return left_->calculate(t) * right_->calculate(t);
 }
+
+std::unique_ptr<Expr> MulExpr::clone() const {
+  return std::make_unique<MulExpr>(left_->clone(), right_->clone());
+}
+
+bool MulExpr::compare(const Expr* other) const {
+  if (auto e = dynamic_cast<const MulExpr*>(other))
+    return e->left_->compare(left_.get()) && e->right_->compare(right_.get());
+
+  return false;
+}
 // }}}
 // {{{ DivExpr
 DivExpr::DivExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
@@ -137,6 +203,17 @@ DivExpr::DivExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
 
 Number DivExpr::calculate(const SymbolTable& t) const {
   return left_->calculate(t) / right_->calculate(t);
+}
+
+std::unique_ptr<Expr> DivExpr::clone() const {
+  return std::make_unique<DivExpr>(left_->clone(), right_->clone());
+}
+
+bool DivExpr::compare(const Expr* other) const {
+  if (auto e = dynamic_cast<const DivExpr*>(other))
+    return e->left_->compare(left_.get()) && e->right_->compare(right_.get());
+
+  return false;
 }
 // }}}
 // {{{ PowExpr
@@ -147,6 +224,17 @@ Number PowExpr::calculate(const SymbolTable& t) const {
   Number a = left_->calculate(t);
   Number b = right_->calculate(t);
   return std::pow(a, b);
+}
+
+std::unique_ptr<Expr> PowExpr::clone() const {
+  return std::make_unique<PowExpr>(left_->clone(), right_->clone());
+}
+
+bool PowExpr::compare(const Expr* other) const {
+  if (auto e = dynamic_cast<const PowExpr*>(other))
+    return e->left_->compare(left_.get()) && e->right_->compare(right_.get());
+
+  return false;
 }
 // }}}
 
