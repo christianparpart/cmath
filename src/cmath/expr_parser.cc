@@ -7,20 +7,55 @@
 
 #include <cmath/expr.h>
 #include <cmath/expr_parser.h>
+#include <codecvt>
 #include <iostream>
+#include <locale>
 
 namespace cmath {
 
-ExprTokenizer::ExprTokenizer(const std::string& expression)
+inline std::string toUtf8(const std::u16string& s) {
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
+  return convert.to_bytes(s);
+}
+
+inline std::u16string toUtf16(const std::string& s) {
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
+  return convert.from_bytes(s);
+}
+
+inline std::string toUtf8(char16_t ch) {
+  std::u16string s;
+  s += ch;
+  return toUtf8(s);
+}
+
+ExprTokenizer::ExprTokenizer(const std::u16string& expression)
     : expression_(expression), currentChar_(expression_.cbegin()), currentToken_() {}
 
-ExprTokenizer::ExprTokenizer() : ExprTokenizer("") {}
+ExprTokenizer::ExprTokenizer() : ExprTokenizer(std::u16string()) {}
 
 bool ExprTokenizer::eof() const {
   return currentChar_ == expression_.end();
 }
 
+inline bool isGreekLetter(char16_t ch) {
+  // capital letters
+  if (ch >= 913 && ch <= 937)
+    return true;
+
+  // small letters
+  if (ch >= 945 && ch <= 969)
+    return true;
+
+  // cursives and archaic
+  if (ch >= 976 && ch <= 993)
+    return true;
+
+  return false;
+}
+
 bool ExprTokenizer::next() {
+  std::cout << "next: " << toUtf8(*currentChar_) << '\n';
   if (currentChar_ == expression_.end()) {
     currentToken_.setToken(Token::Eof);
     return false;
@@ -92,13 +127,6 @@ bool ExprTokenizer::next() {
       break;
   }
 
-  // variables
-  if (std::isalpha(*currentChar_)) {
-    currentToken_.setSymbol(*currentChar_);
-    currentChar_++;
-    return true;
-  }
-
   // decimal numbers
   if (std::isdigit(*currentChar_)) {
     Number n = *currentChar_ - '0';
@@ -109,6 +137,14 @@ bool ExprTokenizer::next() {
       currentChar_++;
     }
     currentToken_.setNumber(n);
+    return true;
+  }
+
+  // variables
+  if (isalpha(*currentChar_) || isGreekLetter(*currentChar_)) {
+    std::u16string v;
+    v += *currentChar_++;
+    currentToken_.setSymbol(toUtf8(v));
     return true;
   }
 
@@ -125,13 +161,21 @@ ExprTokenizer& ExprTokenizer::operator=(const ExprTokenizer& t) {
   return *this;
 }
 
+std::string ExprTokenizer::expression() const {
+  return toUtf8(expression_);
+}
+
 std::ostream& operator<<(std::ostream& os, const ExprTokenizer& t) {
   os << "T{" << std::distance(t.expression_.begin(), t.currentChar_) << ", \""
-     << t.expression_ << "\"}";
+     << t.expression() << "\"}";
   return os;
 }
 
 Result<std::unique_ptr<Expr>> ExprParser::parse(const std::string& expression) {
+  return parse(toUtf16(expression));
+}
+
+Result<std::unique_ptr<Expr>> ExprParser::parse(const std::u16string& expression) {
   expression_ = expression;
   currentToken_ = ExprTokenizer(expression);
   nextToken();
@@ -173,6 +217,9 @@ std::unique_ptr<Expr> ExprParser::mulExpr() {
   auto lhs = powExpr();
   while (!eof()) {
     switch (currentToken()) {
+      case Token::Eof:
+      case Token::RndClose:
+        return lhs;
       case Token::Mul:
         nextToken();
         lhs = std::make_unique<MulExpr>(std::move(lhs), powExpr());
@@ -182,7 +229,10 @@ std::unique_ptr<Expr> ExprParser::mulExpr() {
         lhs = std::make_unique<DivExpr>(std::move(lhs), powExpr());
         break;
       default:
-        return lhs;
+        printf("x\n");
+        // a*b = ab
+        lhs = std::make_unique<DivExpr>(std::move(lhs), powExpr());
+        break;
     }
   }
   return lhs;

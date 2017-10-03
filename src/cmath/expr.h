@@ -8,6 +8,7 @@
 #pragma once
 
 #include <complex>
+#include <string>
 #include <iosfwd>
 #include <map>
 #include <memory>
@@ -17,7 +18,7 @@ namespace cmath {
 class Expr;
 
 using Number = std::complex<double>;
-using Symbol = char;
+using Symbol = std::string;
 using SymbolTable = std::map<Symbol, std::unique_ptr<Expr>>;
 
 enum class Precedence {
@@ -72,7 +73,7 @@ class NegExpr : public Expr {
 
 class SymbolExpr : public Expr {
  public:
-  explicit SymbolExpr(Symbol n);
+  explicit SymbolExpr(const Symbol& n);
 
   std::string str() const override;
   Number calculate(const SymbolTable& t) const override;

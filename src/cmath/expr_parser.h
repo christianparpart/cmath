@@ -43,13 +43,15 @@ class ExprToken {
 
   Token token() const noexcept { return token_; }
   Number number() const { return number_; }
-  Symbol symbol() const { return symbol_; }
+  const Symbol& symbol() const { return symbol_; }
 
   void setToken(Token t) { token_ = t; }
-  void setSymbol(Symbol s) {
+
+  void setSymbol(const Symbol& s) {
     symbol_ = s;
     setToken(Token::Symbol);
   }
+
   void setNumber(Number n) {
     number_ = n;
     setToken(Token::Number);
@@ -63,10 +65,12 @@ class ExprToken {
 
 class ExprTokenizer {
  public:
-  explicit ExprTokenizer(const std::string& expression);
+  explicit ExprTokenizer(const std::u16string& expression);
   ExprTokenizer();
 
   ExprTokenizer& operator=(const ExprTokenizer& t);
+
+  std::string expression() const;
 
   bool next();
   bool eof() const;
@@ -91,8 +95,8 @@ class ExprTokenizer {
   friend std::ostream& operator<<(std::ostream& os, const ExprTokenizer& t);
 
  private:
-  std::string expression_;
-  std::string::const_iterator currentChar_;
+  std::u16string expression_;
+  std::u16string::const_iterator currentChar_;
   ExprToken currentToken_;
 };
 
@@ -101,12 +105,13 @@ class ExprParser {
   ExprParser();
 
   Result<std::unique_ptr<Expr>> parse(const std::string& expression);
+  Result<std::unique_ptr<Expr>> parse(const std::u16string& expression);
 
   enum ErrorCode { UnexpectedCharacter, UnexpectedToken, UnexpectedEof };
   class ErrorCategory;
 
-  ExprTokenizer begin() { return ExprTokenizer(expression_); }
-  ExprTokenizer end() { return ExprTokenizer(); }
+  // ExprTokenizer begin() { return ExprTokenizer(expression_); }
+  // ExprTokenizer end() { return ExprTokenizer(); }
 
  private:
   bool eof() const { return currentToken_.eof(); }
@@ -122,7 +127,7 @@ class ExprParser {
   std::unique_ptr<Expr> primaryExpr();  // number symbol ( ! -
 
  private:
-  std::string expression_;
+  std::u16string expression_;
   ExprTokenizer currentToken_;
 };
 

@@ -8,41 +8,40 @@
 #include <cmath/expr.h>
 #include <cmath/expr_parser.h>
 #include <iostream>
+#include <sstream>
 #include <iomanip>
 
 using namespace cmath;
 
 std::string simple(Number n) {
-  if (n.imag()) {
-    std::stringstream s;
-    s << std::fixed
-      << std::setprecision(1)
-      << n.real() << " + " << n.imag() << "i";
-    return s.str();
+  std::stringstream s;
+  if (!n.imag()) {
+    s << n.real();
   } else {
-    std::stringstream s;
-    s << std::fixed << std::setprecision(1) << n.real();
-    return s.str();
+    if (n.real()) {
+      s << n.real() << " + ";
+    }
+    if (n.imag() != 1) {
+      s << n.imag();
+    }
+    s << 'i';
   }
+  return s.str();
+}
+
+void declareStandardSymbols(SymbolTable* st) {
+  (*st)["i"] = std::make_unique<NumberExpr>(Number(0, 1));
+  (*st)["e"] = std::make_unique<NumberExpr>(Number(M_E));
+  (*st)[u8"π"] = std::make_unique<NumberExpr>(Number(M_PI));
 }
 
 int main(int argc, const char* argv[]) {
   try {
     SymbolTable symbols;
-
-    symbols['i'] = std::make_unique<NumberExpr>(Number(0, 1));
-    symbols['x'] = std::make_unique<NumberExpr>(2);
-    symbols['a'] = std::make_unique<MulExpr>(
-        std::make_unique<SymbolExpr>('x'),
-        std::make_unique<PlusExpr>(std::make_unique<NumberExpr>(3),
-                                   std::make_unique<NumberExpr>(1)));
+    declareStandardSymbols(&symbols);
 
     for (const auto& e : symbols)
       std::cout << e.first << " = " << e.second->str() << std::endl;
-
-    const auto& a = symbols['a'];
-    std::cout << "Expression : " << a->str() << '\n';
-    std::cout << "Result     : " << simple(a->calculate(symbols)) << '\n';
 
     if (argc > 1) {
       Result<std::unique_ptr<Expr>> e = ExprParser().parse(argv[1]);
@@ -51,6 +50,7 @@ int main(int argc, const char* argv[]) {
         return 1;
       }
       std::cout << "Expression : " << (*e)->str() << '\n';
+      std::cout << "Result     : " << simple((*e)->calculate(symbols)) << '\n';
     }
 
     return 0;

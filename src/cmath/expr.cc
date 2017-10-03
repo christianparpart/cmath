@@ -94,7 +94,7 @@ bool NegExpr::compare(const Expr* other) const {
 }
 // }}}
 // {{{ SymbolExpr
-SymbolExpr::SymbolExpr(Symbol s) : Expr(Precedence::Number), symbol_(s) {}
+SymbolExpr::SymbolExpr(const Symbol& s) : Expr(Precedence::Number), symbol_(s) {}
 
 std::string SymbolExpr::str() const {
   std::stringstream s;
