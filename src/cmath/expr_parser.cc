@@ -119,8 +119,7 @@ ExprParser::ExprParser() : expression_(), currentToken_() {}
 
 ExprTokenizer& ExprTokenizer::operator=(const ExprTokenizer& t) {
   expression_ = t.expression_;
-  currentChar_ = expression_.cbegin();
-  std::advance(currentChar_, t.offset());
+  currentChar_ = std::next(expression_.cbegin(), t.offset());
   currentToken_ = t.currentToken_;
 
   return *this;

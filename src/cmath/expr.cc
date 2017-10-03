@@ -30,10 +30,17 @@ NumberExpr::NumberExpr(Number n) : Expr(Precedence::Number), literal_(n) {}
 
 std::string NumberExpr::str() const {
   std::stringstream s;
-  if (literal_.imag()) {
-    s << literal_.real() << '+' << literal_.imag() << 'i';
-  } else {
+
+  if (!literal_.imag()) {
     s << literal_.real();
+  } else {
+    if (literal_.real()) {
+      s << literal_.real() << " + ";
+    }
+    if (literal_.imag() != 1) {
+      s << literal_.imag();
+    }
+    s << 'i';
   }
   return s.str();
 }

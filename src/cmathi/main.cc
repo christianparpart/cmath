@@ -8,13 +8,29 @@
 #include <cmath/expr.h>
 #include <cmath/expr_parser.h>
 #include <iostream>
+#include <iomanip>
 
 using namespace cmath;
+
+std::string simple(Number n) {
+  if (n.imag()) {
+    std::stringstream s;
+    s << std::fixed
+      << std::setprecision(1)
+      << n.real() << " + " << n.imag() << "i";
+    return s.str();
+  } else {
+    std::stringstream s;
+    s << std::fixed << std::setprecision(1) << n.real();
+    return s.str();
+  }
+}
 
 int main(int argc, const char* argv[]) {
   try {
     SymbolTable symbols;
 
+    symbols['i'] = std::make_unique<NumberExpr>(Number(0, 1));
     symbols['x'] = std::make_unique<NumberExpr>(2);
     symbols['a'] = std::make_unique<MulExpr>(
         std::make_unique<SymbolExpr>('x'),
@@ -26,7 +42,7 @@ int main(int argc, const char* argv[]) {
 
     const auto& a = symbols['a'];
     std::cout << "Expression : " << a->str() << '\n';
-    std::cout << "Result     : " << a->calculate(symbols) << '\n';
+    std::cout << "Result     : " << simple(a->calculate(symbols)) << '\n';
 
     if (argc > 1) {
       Result<std::unique_ptr<Expr>> e = ExprParser().parse(argv[1]);
