@@ -7,11 +7,12 @@
 
 #include <cmath/expr.h>
 #include <cmath/expr_parser.h>
+#include <iostream>
 
 namespace cmath {
 
 ExprTokenizer::ExprTokenizer(const std::string& expression)
-    : expression_(expression), currentChar_(expression_.begin()), currentToken_() {}
+    : expression_(expression), currentChar_(expression_.cbegin()), currentToken_() {}
 
 ExprTokenizer::ExprTokenizer() : ExprTokenizer("") {}
 
@@ -115,6 +116,21 @@ bool ExprTokenizer::next() {
 }
 
 ExprParser::ExprParser() : expression_(), currentToken_() {}
+
+ExprTokenizer& ExprTokenizer::operator=(const ExprTokenizer& t) {
+  expression_ = t.expression_;
+  currentChar_ = expression_.cbegin();
+  std::advance(currentChar_, t.offset());
+  currentToken_ = t.currentToken_;
+
+  return *this;
+}
+
+std::ostream& operator<<(std::ostream& os, const ExprTokenizer& t) {
+  os << "T{" << std::distance(t.expression_.begin(), t.currentChar_) << ", \""
+     << t.expression_ << "\"}";
+  return os;
+}
 
 Result<std::unique_ptr<Expr>> ExprParser::parse(const std::string& expression) {
   expression_ = expression;

@@ -39,7 +39,10 @@ int main(int argc, const char* argv[]) {
 
     return 0;
   } catch (std::error_code ec) {
-    std::cout << ec.category().name() << ": " << ec.message() << '\n';
+    std::cerr << ec.category().name() << ": " << ec.message() << '\n';
+    return 1;
+  } catch (const char* msg) {
+    std::cerr << "Error. " << msg << '\n';
     return 1;
   }
 }

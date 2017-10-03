@@ -8,6 +8,7 @@
 
 #include <cmath/expr.h>
 #include <cmath/result.h>
+#include <iterator>
 #include <memory>
 #include <system_error>
 #include <utility>
@@ -65,8 +66,11 @@ class ExprTokenizer {
   explicit ExprTokenizer(const std::string& expression);
   ExprTokenizer();
 
+  ExprTokenizer& operator=(const ExprTokenizer& t);
+
   bool next();
   bool eof() const;
+  size_t offset() const { return std::distance(expression_.begin(), currentChar_); }
 
   const ExprToken& operator*() const { return currentToken_; }
   const ExprToken* operator->() const { return &currentToken_; }
@@ -75,6 +79,7 @@ class ExprTokenizer {
     next();
     return *this;
   }
+
   ExprTokenizer& operator++(int) {
     next();
     return *this;
@@ -83,9 +88,11 @@ class ExprTokenizer {
   bool operator==(const ExprTokenizer& other) const;
   bool operator!=(const ExprTokenizer& other) const;
 
+  friend std::ostream& operator<<(std::ostream& os, const ExprTokenizer& t);
+
  private:
   std::string expression_;
-  std::string::iterator currentChar_;
+  std::string::const_iterator currentChar_;
   ExprToken currentToken_;
 };
 
