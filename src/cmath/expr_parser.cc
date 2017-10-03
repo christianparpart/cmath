@@ -10,13 +10,115 @@
 
 namespace cmath {
 
-ExprParser::ExprParser()
-    : expression_(), currentPosition_(), currentNumber_(), currentSymbol_(),
-      currentToken_() {}
+ExprTokenizer::ExprTokenizer(const std::string& expression)
+    : expression_(expression), currentChar_(expression_.begin()), currentToken_() {}
+
+ExprTokenizer::ExprTokenizer() : ExprTokenizer("") {}
+
+bool ExprTokenizer::eof() const {
+  return currentChar_ == expression_.end();
+}
+
+bool ExprTokenizer::next() {
+  if (currentChar_ == expression_.end()) {
+    currentToken_.setToken(Token::Eof);
+    return false;
+  }
+
+  switch (*currentChar_) {
+    case '+':
+      currentChar_++;
+      currentToken_.setToken(Token::Plus);
+      return true;
+    case '-':
+      currentChar_++;
+      currentToken_.setToken(Token::Minus);
+      return true;
+    case '*':
+      currentChar_++;
+      currentToken_.setToken(Token::Mul);
+      return true;
+    case '/':
+      currentChar_++;
+      currentToken_.setToken(Token::Div);
+      return true;
+    case '^':
+      currentChar_++;
+      currentToken_.setToken(Token::Pow);
+      return true;
+    case '(':
+      currentChar_++;
+      currentToken_.setToken(Token::RndOpen);
+      return true;
+    case ')':
+      currentChar_++;
+      currentToken_.setToken(Token::RndClose);
+      return true;
+    case ':':
+      currentChar_++;
+      if (!eof() && *currentChar_ == '=') {
+        currentChar_++;
+        currentToken_.setToken(Token::Define);
+        return true;
+      } else {
+        throw make_error_code(ExprParser::UnexpectedCharacter);
+      }
+    case '<':
+      // < <= <=>
+      currentChar_++;
+      if (!eof() && *currentChar_ == '=') {
+        currentChar_++;
+        if (!eof() && *currentChar_ == '>') {
+          currentChar_++;
+          currentToken_.setToken(Token::Equivalence);
+        } else {
+          currentToken_.setToken(Token::LessEqu);
+        }
+      } else {
+        currentToken_.setToken(Token::Less);
+      }
+      return true;
+    case '>':
+      // > >=
+      if (!eof() && *currentChar_ == '=') {
+        currentChar_++;
+        currentToken_.setToken(Token::GreaterEqu);
+      } else {
+        currentToken_.setToken(Token::Greater);
+      }
+      return true;
+    default:
+      break;
+  }
+
+  // variables
+  if (std::isalpha(*currentChar_)) {
+    currentToken_.setSymbol(*currentChar_);
+    currentChar_++;
+    return true;
+  }
+
+  // decimal numbers
+  if (std::isdigit(*currentChar_)) {
+    Number n = *currentChar_ - '0';
+    currentChar_++;
+    while (!eof() && std::isdigit(*currentChar_)) {
+      n *= 10;
+      n += *currentChar_ - '0';
+      currentChar_++;
+    }
+    currentToken_.setNumber(n);
+    return true;
+  }
+
+  throw make_error_code(ExprParser::UnexpectedCharacter);
+}
+
+ExprParser::ExprParser() : expression_(), currentToken_() {}
 
 Result<std::unique_ptr<Expr>> ExprParser::parse(const std::string& expression) {
   expression_ = expression;
-  currentPosition_ = expression_.begin();
+  currentToken_ = ExprTokenizer(expression);
   nextToken();
 
   try {
@@ -99,12 +201,12 @@ std::unique_ptr<Expr> ExprParser::primaryExpr() {
       return std::make_unique<NegExpr>(primaryExpr());
     }
     case Token::Number: {
-      auto e = std::make_unique<NumberExpr>(currentNumber_);
+      auto e = std::make_unique<NumberExpr>(currentToken_->number());
       nextToken();
       return e;
     }
     case Token::Symbol: {
-      auto e = std::make_unique<SymbolExpr>(currentSymbol_);
+      auto e = std::make_unique<SymbolExpr>(currentToken_->symbol());
       nextToken();
       return e;
     }
@@ -120,90 +222,13 @@ void ExprParser::consumeToken(Token t) {
   nextToken();
 }
 
-ExprParser::Token ExprParser::currentToken() {
-  return currentToken_;
+Token ExprParser::currentToken() {
+  return currentToken_->token();
 }
 
-ExprParser::Token ExprParser::nextToken() {
-  if (currentPosition_ == expression_.end())
-    return currentToken_ = Token::Eof;
-
-  switch (*currentPosition_) {
-    case '+':
-      currentPosition_++;
-      return currentToken_ = Token::Plus;
-    case '-':
-      currentPosition_++;
-      return currentToken_ = Token::Minus;
-    case '*':
-      currentPosition_++;
-      return currentToken_ = Token::Mul;
-    case '/':
-      currentPosition_++;
-      return currentToken_ = Token::Div;
-    case '^':
-      currentPosition_++;
-      return currentToken_ = Token::Pow;
-    case '(':
-      currentPosition_++;
-      return currentToken_ = Token::RndOpen;
-    case ')':
-      currentPosition_++;
-      return currentToken_ = Token::RndClose;
-    case ':':
-      currentPosition_++;
-      if (!eof() && *currentPosition_ == '=') {
-        currentPosition_++;
-        return currentToken_ = Token::Define;
-      } else {
-        throw make_error_code(UnexpectedCharacter);
-      }
-    case '<':
-      // < <= <=>
-      currentPosition_++;
-      if (!eof() && *currentPosition_ == '=') {
-        currentPosition_++;
-        if (!eof() && *currentPosition_ == '>') {
-          currentPosition_++;
-          return currentToken_ = Token::Equivalence;
-        } else {
-          return currentToken_ = Token::LessEqu;
-        }
-      } else {
-        return currentToken_ = Token::Less;
-      }
-    case '>':
-      // > >=
-      if (!eof() && *currentPosition_ == '=') {
-        currentPosition_++;
-        return currentToken_ = Token::GreaterEqu;
-      } else {
-        return currentToken_ = Token::Greater;
-      }
-    default:
-      break;
-  }
-
-  // variables
-  if (std::isalpha(*currentPosition_)) {
-    currentSymbol_ = *currentPosition_;
-    currentPosition_++;
-    return currentToken_ = Token::Symbol;
-  }
-
-  // decimal numbers
-  if (std::isdigit(*currentPosition_)) {
-    currentNumber_ = *currentPosition_ - '0';
-    currentPosition_++;
-    while (!eof() && std::isdigit(*currentPosition_)) {
-      currentNumber_ *= 10;
-      currentNumber_ += *currentPosition_ - '0';
-      currentPosition_++;
-    }
-    return currentToken_ = Token::Number;
-  }
-
-  throw make_error_code(UnexpectedCharacter);
+Token ExprParser::nextToken() {
+  currentToken_++;
+  return currentToken_->token();
 }
 
 // ----------------------------------------------------------------------------

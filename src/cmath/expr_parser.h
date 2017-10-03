@@ -14,6 +14,81 @@
 
 namespace cmath {
 
+enum class Token {  // {{{
+  Eof,
+  Number,
+  Symbol,
+  Equ,
+  NotEqu,
+  LessEqu,
+  GreaterEqu,
+  Less,
+  Greater,
+  Plus,
+  Minus,
+  Mul,
+  Div,
+  Pow,
+  Fac,
+  RndOpen,
+  RndClose,
+  Define,       // :=
+  Equivalence,  // <=>
+};              // }}}
+
+class ExprToken {
+ public:
+  ExprToken() : token_(Token::Eof), number_(), symbol_() {}
+
+  Token token() const noexcept { return token_; }
+  Number number() const { return number_; }
+  Symbol symbol() const { return symbol_; }
+
+  void setToken(Token t) { token_ = t; }
+  void setSymbol(Symbol s) {
+    symbol_ = s;
+    setToken(Token::Symbol);
+  }
+  void setNumber(Number n) {
+    number_ = n;
+    setToken(Token::Number);
+  }
+
+ private:
+  Token token_;
+  Number number_;
+  Symbol symbol_;
+};
+
+class ExprTokenizer {
+ public:
+  explicit ExprTokenizer(const std::string& expression);
+  ExprTokenizer();
+
+  bool next();
+  bool eof() const;
+
+  const ExprToken& operator*() const { return currentToken_; }
+  const ExprToken* operator->() const { return &currentToken_; }
+
+  ExprTokenizer& operator++() {
+    next();
+    return *this;
+  }
+  ExprTokenizer& operator++(int) {
+    next();
+    return *this;
+  }
+
+  bool operator==(const ExprTokenizer& other) const;
+  bool operator!=(const ExprTokenizer& other) const;
+
+ private:
+  std::string expression_;
+  std::string::iterator currentChar_;
+  ExprToken currentToken_;
+};
+
 class ExprParser {
  public:
   ExprParser();
@@ -23,30 +98,11 @@ class ExprParser {
   enum ErrorCode { UnexpectedCharacter, UnexpectedToken, UnexpectedEof };
   class ErrorCategory;
 
- private:
-  enum class Token {  // {{{
-    Eof,
-    Number,
-    Symbol,
-    Equ,
-    NotEqu,
-    LessEqu,
-    GreaterEqu,
-    Less,
-    Greater,
-    Plus,
-    Minus,
-    Mul,
-    Div,
-    Pow,
-    Fac,
-    RndOpen,
-    RndClose,
-    Define,       // :=
-    Equivalence,  // <=>
-  };  // }}}
+  ExprTokenizer begin() { return ExprTokenizer(expression_); }
+  ExprTokenizer end() { return ExprTokenizer(); }
 
-  bool eof() const { return currentPosition_ == expression_.end(); }
+ private:
+  bool eof() const { return currentToken_.eof(); }
   Token nextToken();
   Token currentToken();
   void consumeToken(Token t);
@@ -60,10 +116,7 @@ class ExprParser {
 
  private:
   std::string expression_;
-  std::string::iterator currentPosition_;
-  Number currentNumber_;
-  Symbol currentSymbol_;
-  Token currentToken_;
+  ExprTokenizer currentToken_;
 };
 
 class ExprParser::ErrorCategory : public std::error_category {

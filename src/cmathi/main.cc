@@ -12,29 +12,34 @@
 using namespace cmath;
 
 int main(int argc, const char* argv[]) {
-  SymbolTable symbols;
+  try {
+    SymbolTable symbols;
 
-  symbols['x'] = std::make_unique<NumberExpr>(2);
-  symbols['a'] = std::make_unique<MulExpr>(
-      std::make_unique<SymbolExpr>('x'),
-      std::make_unique<PlusExpr>(std::make_unique<NumberExpr>(3),
-                                 std::make_unique<NumberExpr>(1)));
+    symbols['x'] = std::make_unique<NumberExpr>(2);
+    symbols['a'] = std::make_unique<MulExpr>(
+        std::make_unique<SymbolExpr>('x'),
+        std::make_unique<PlusExpr>(std::make_unique<NumberExpr>(3),
+                                   std::make_unique<NumberExpr>(1)));
 
-  for (const auto& e : symbols)
-    std::cout << e.first << " = " << e.second->str() << std::endl;
+    for (const auto& e : symbols)
+      std::cout << e.first << " = " << e.second->str() << std::endl;
 
-  const auto& a = symbols['a'];
-  std::cout << "Expression : " << a->str() << '\n';
-  std::cout << "Result     : " << a->calculate(symbols) << '\n';
+    const auto& a = symbols['a'];
+    std::cout << "Expression : " << a->str() << '\n';
+    std::cout << "Result     : " << a->calculate(symbols) << '\n';
 
-  if (argc > 1) {
-    Result<std::unique_ptr<Expr>> e = ExprParser().parse(argv[1]);
-    if (!e) {
-      std::cout << e.error().category().name() << ": " << e.error().message() << '\n';
-      return 1;
+    if (argc > 1) {
+      Result<std::unique_ptr<Expr>> e = ExprParser().parse(argv[1]);
+      if (!e) {
+        std::cout << e.error().category().name() << ": " << e.error().message() << '\n';
+        return 1;
+      }
+      std::cout << "Expression : " << (*e)->str() << '\n';
     }
-    std::cout << "Expression : " << (*e)->str() << '\n';
-  }
 
-  return 0;
+    return 0;
+  } catch (std::error_code ec) {
+    std::cout << ec.category().name() << ": " << ec.message() << '\n';
+    return 1;
+  }
 }
