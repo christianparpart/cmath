@@ -44,14 +44,11 @@ void dumpSymbols(const SymbolTable& symbols) {
 }
 
 void calculate(const std::string expression, const SymbolTable& st) {
-  printf("calculate: %s\n", expression.c_str());
   Result<std::unique_ptr<Expr>> e = parseExpression(expression);
-  printf("calculate: got e\n");
   if (!e)
     throw e;
 
-  std::cout << "    " << (*e)->str() << '\n'
-            << "  = " << simple((*e)->calculate(st)) << '\n';
+  std::cout << (*e)->str() << " = " << simple((*e)->calculate(st)) << '\n';
 }
 
 int main(int argc, const char* argv[]) {
@@ -61,10 +58,11 @@ int main(int argc, const char* argv[]) {
     dumpSymbols(symbols);
 
     for (;;) {
-      char* line = readline("");
+      char* line = readline(": ");
       if (line == nullptr) // EOF
         return 0;
-      else if (*line) {
+      else if (*line != '\0') {
+        add_history(line);
         calculate(line, symbols);
       }
     }

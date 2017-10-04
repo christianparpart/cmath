@@ -11,6 +11,8 @@
 #include <iostream>
 #include <locale>
 
+// TODO: skip spaces in ExprTokenizer
+
 namespace cmath {
 
 inline std::string toUtf8(const std::u16string& s) {
@@ -233,7 +235,6 @@ Result<std::unique_ptr<Expr>> parseExpression(const std::u16string& expression) 
 Result<std::unique_ptr<Expr>> ExprParser::parse() {
   try {
     if (auto e = addExpr(); eof()) {
-      printf("parse: got e and eof\n");
       return e;
     } else {
       return make_error_code(UnexpectedToken);

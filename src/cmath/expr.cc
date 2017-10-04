@@ -225,7 +225,7 @@ bool DivExpr::compare(const Expr* other) const {
 // }}}
 // {{{ PowExpr
 PowExpr::PowExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
-    : BinaryExpr(Precedence::Multiplication, '^', std::move(left), std::move(right)) {}
+    : BinaryExpr(Precedence::Power, '^', std::move(left), std::move(right)) {}
 
 Number PowExpr::calculate(const SymbolTable& t) const {
   Number a = left_->calculate(t);
