@@ -56,25 +56,44 @@ inline bool isGreekLetter(char16_t ch) {
 
 std::ostream& operator<<(std::ostream& os, Token t) {
   switch (t) {
-    case Token::Eof: return os << "Eof";
-    case Token::Number: return os << "Number";
-    case Token::Symbol: return os << "Symbol";
-    case Token::Equ: return os << "Equ";
-    case Token::NotEqu: return os << "NotEqu";
-    case Token::LessEqu: return os << "LessEqu";
-    case Token::GreaterEqu: return os << "GreaterEqu";
-    case Token::Less: return os << "Less";
-    case Token::Greater: return os << "Greater";
-    case Token::Plus: return os << "Plus";
-    case Token::Minus: return os << "Minus";
-    case Token::Mul: return os << "Mul";
-    case Token::Div: return os << "Div";
-    case Token::Pow: return os << "Pow";
-    case Token::Fac: return os << "Fac";
-    case Token::RndOpen: return os << "RndOpen";
-    case Token::RndClose: return os << "RndClose";
-    case Token::Define: return os << "Define";
-    case Token::Equivalence: return os << "Equivalence";
+    case Token::Eof:
+      return os << "Eof";
+    case Token::Number:
+      return os << "Number";
+    case Token::Symbol:
+      return os << "Symbol";
+    case Token::Equ:
+      return os << "Equ";
+    case Token::NotEqu:
+      return os << "NotEqu";
+    case Token::LessEqu:
+      return os << "LessEqu";
+    case Token::GreaterEqu:
+      return os << "GreaterEqu";
+    case Token::Less:
+      return os << "Less";
+    case Token::Greater:
+      return os << "Greater";
+    case Token::Plus:
+      return os << "Plus";
+    case Token::Minus:
+      return os << "Minus";
+    case Token::Mul:
+      return os << "Mul";
+    case Token::Div:
+      return os << "Div";
+    case Token::Pow:
+      return os << "Pow";
+    case Token::Fac:
+      return os << "Fac";
+    case Token::RndOpen:
+      return os << "RndOpen";
+    case Token::RndClose:
+      return os << "RndClose";
+    case Token::Define:
+      return os << "Define";
+    case Token::Equivalence:
+      return os << "Equivalence";
   }
 }
 
@@ -179,7 +198,11 @@ bool ExprTokenizer::next() {
   throw make_error_code(ExprParser::UnexpectedCharacter);
 }
 
-ExprParser::ExprParser() : expression_(), currentToken_() {}
+ExprParser::ExprParser(const std::string& e) : ExprParser(toUtf16(e)) {}
+
+ExprParser::ExprParser(const std::u16string& e) : expression_(e), currentToken_(e) {
+  nextToken();
+}
 
 ExprTokenizer& ExprTokenizer::operator=(const ExprTokenizer& t) {
   expression_ = t.expression_;
@@ -199,20 +222,22 @@ std::ostream& operator<<(std::ostream& os, const ExprTokenizer& t) {
   return os;
 }
 
-Result<std::unique_ptr<Expr>> ExprParser::parse(const std::string& expression) {
-  return parse(toUtf16(expression));
+Result<std::unique_ptr<Expr>> parseExpression(const std::string& expression) {
+  return ExprParser(expression).parse();
 }
 
-Result<std::unique_ptr<Expr>> ExprParser::parse(const std::u16string& expression) {
-  expression_ = expression;
-  currentToken_ = ExprTokenizer(expression);
-  nextToken();
+Result<std::unique_ptr<Expr>> parseExpression(const std::u16string& expression) {
+  return ExprParser(expression).parse();
+}
 
+Result<std::unique_ptr<Expr>> ExprParser::parse() {
   try {
-    if (auto e = addExpr(); eof())
+    if (auto e = addExpr(); eof()) {
+      printf("parse: got e and eof\n");
       return e;
-    else
+    } else {
       return make_error_code(UnexpectedToken);
+    }
   } catch (std::error_code ec) {
     return ec;
   }
@@ -257,9 +282,11 @@ std::unique_ptr<Expr> ExprParser::mulExpr() {
         lhs = std::make_unique<DivExpr>(std::move(lhs), powExpr());
         break;
       default:
-        // a*b = ab
-        lhs = std::make_unique<MulExpr>(std::move(lhs), powExpr());
-        break;
+        return lhs;
+        // // a*b = ab
+        // std::cout << "x: " << currentToken() << '\n';
+        // lhs = std::make_unique<MulExpr>(std::move(lhs), powExpr());
+        // break;
     }
   }
   return lhs;

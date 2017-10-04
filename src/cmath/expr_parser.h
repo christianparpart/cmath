@@ -102,12 +102,15 @@ class ExprTokenizer {
   ExprToken currentToken_;
 };
 
+Result<std::unique_ptr<Expr>> parseExpression(const std::string& expression);
+Result<std::unique_ptr<Expr>> parseExpression(const std::u16string& expression);
+
 class ExprParser {
  public:
-  ExprParser();
+  explicit ExprParser(const std::string& expression);
+  explicit ExprParser(const std::u16string& expression);
 
-  Result<std::unique_ptr<Expr>> parse(const std::string& expression);
-  Result<std::unique_ptr<Expr>> parse(const std::u16string& expression);
+  Result<std::unique_ptr<Expr>> parse();
 
   enum ErrorCode { UnexpectedCharacter, UnexpectedToken, UnexpectedEof };
   class ErrorCategory;

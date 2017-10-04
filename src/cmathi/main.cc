@@ -7,9 +7,9 @@
 
 #include <cmath/expr.h>
 #include <cmath/expr_parser.h>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <iomanip>
 
 using namespace cmath;
 
@@ -35,24 +35,31 @@ void declareStandardSymbols(SymbolTable* st) {
   (*st)[u8"π"] = std::make_unique<NumberExpr>(Number(M_PI));
 }
 
+void dumpSymbols(const SymbolTable& symbols) {
+  for (const auto& e : symbols)
+    std::cout << e.first << " = " << e.second->str() << std::endl;
+}
+
+void calculate(const std::string expression, const SymbolTable& st) {
+  printf("calculate: %s\n", expression.c_str());
+  Result<std::unique_ptr<Expr>> e = parseExpression(expression);
+  printf("calculate: got e\n");
+  if (!e)
+    throw e;
+
+  std::cout << "    " << (*e)->str() << '\n'
+            << "  = " << simple((*e)->calculate(st)) << '\n';
+}
+
 int main(int argc, const char* argv[]) {
   try {
     SymbolTable symbols;
     declareStandardSymbols(&symbols);
+    dumpSymbols(symbols);
 
-    for (const auto& e : symbols)
-      std::cout << e.first << " = " << e.second->str() << std::endl;
-
-    if (argc > 1) {
-      Result<std::unique_ptr<Expr>> e = ExprParser().parse(argv[1]);
-      if (!e) {
-        std::cout << e.error().category().name() << ": " << e.error().message() << '\n';
-        return 1;
-      }
-      std::cout << "Expression : " << (*e)->str() << '\n';
-      std::cout << "Result     : " << simple((*e)->calculate(symbols)) << '\n';
+    for (int i = 1; i < argc; ++i) {
+      calculate(argv[i], symbols);
     }
-
     return 0;
   } catch (std::error_code ec) {
     std::cerr << ec.category().name() << ": " << ec.message() << '\n';
