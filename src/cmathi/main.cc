@@ -10,6 +10,9 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <stdio.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 using namespace cmath;
 
@@ -57,9 +60,15 @@ int main(int argc, const char* argv[]) {
     declareStandardSymbols(&symbols);
     dumpSymbols(symbols);
 
-    for (int i = 1; i < argc; ++i) {
-      calculate(argv[i], symbols);
+    for (;;) {
+      char* line = readline("");
+      if (line == nullptr) // EOF
+        return 0;
+      else if (*line) {
+        calculate(line, symbols);
+      }
     }
+
     return 0;
   } catch (std::error_code ec) {
     std::cerr << ec.category().name() << ": " << ec.message() << '\n';

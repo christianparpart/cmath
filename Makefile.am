@@ -62,6 +62,8 @@ cmathi_CXXFLAGS = \
 
 cmathi_LDADD = \
 	libcmath.a \
+	$(BASE_LIBS) \
+	$(BASE_LDFLAGS) \
 	$(AM_LDFLAGS)
 
 cmathi_SOURCES = \

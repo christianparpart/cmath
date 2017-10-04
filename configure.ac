@@ -34,7 +34,7 @@ BASE_CXXFLAGS="-DXOPEN_SOURCE=600 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE \
  -Wno-unused-variable -Wno-unused-parameter"
 AC_SUBST([BASE_CXXFLAGS])
 
-BASE_LIBS=""
+BASE_LIBS="-lreadline"
 AC_SUBST([BASE_LIBS])
 
 BASE_LDFLAGS="-rdynamic"
