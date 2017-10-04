@@ -37,6 +37,8 @@ enum class Token {  // {{{
   Equivalence,  // <=>
 };              // }}}
 
+std::ostream& operator<<(std::ostream& os, Token t);
+
 class ExprToken {
  public:
   ExprToken() : token_(Token::Eof), number_(), symbol_() {}

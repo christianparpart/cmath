@@ -35,7 +35,7 @@ ExprTokenizer::ExprTokenizer(const std::u16string& expression)
 ExprTokenizer::ExprTokenizer() : ExprTokenizer(std::u16string()) {}
 
 bool ExprTokenizer::eof() const {
-  return currentChar_ == expression_.end();
+  return currentToken_.token() == Token::Eof;
 }
 
 inline bool isGreekLetter(char16_t ch) {
@@ -54,12 +54,40 @@ inline bool isGreekLetter(char16_t ch) {
   return false;
 }
 
+std::ostream& operator<<(std::ostream& os, Token t) {
+  switch (t) {
+    case Token::Eof: return os << "Eof";
+    case Token::Number: return os << "Number";
+    case Token::Symbol: return os << "Symbol";
+    case Token::Equ: return os << "Equ";
+    case Token::NotEqu: return os << "NotEqu";
+    case Token::LessEqu: return os << "LessEqu";
+    case Token::GreaterEqu: return os << "GreaterEqu";
+    case Token::Less: return os << "Less";
+    case Token::Greater: return os << "Greater";
+    case Token::Plus: return os << "Plus";
+    case Token::Minus: return os << "Minus";
+    case Token::Mul: return os << "Mul";
+    case Token::Div: return os << "Div";
+    case Token::Pow: return os << "Pow";
+    case Token::Fac: return os << "Fac";
+    case Token::RndOpen: return os << "RndOpen";
+    case Token::RndClose: return os << "RndClose";
+    case Token::Define: return os << "Define";
+    case Token::Equivalence: return os << "Equivalence";
+  }
+}
+
 bool ExprTokenizer::next() {
-  std::cout << "next: " << toUtf8(*currentChar_) << '\n';
   if (currentChar_ == expression_.end()) {
     currentToken_.setToken(Token::Eof);
     return false;
   }
+
+  // std::cout << "next: currentChar: "
+  //           << toUtf8(*currentChar_)
+  //           << " " << "currentToken: " << currentToken_.token()
+  //           << '\n';
 
   switch (*currentChar_) {
     case '+':
@@ -215,7 +243,7 @@ std::unique_ptr<Expr> ExprParser::addExpr() {
 
 std::unique_ptr<Expr> ExprParser::mulExpr() {
   auto lhs = powExpr();
-  while (!eof()) {
+  for (;;) {
     switch (currentToken()) {
       case Token::Eof:
       case Token::RndClose:
@@ -229,9 +257,8 @@ std::unique_ptr<Expr> ExprParser::mulExpr() {
         lhs = std::make_unique<DivExpr>(std::move(lhs), powExpr());
         break;
       default:
-        printf("x\n");
         // a*b = ab
-        lhs = std::make_unique<DivExpr>(std::move(lhs), powExpr());
+        lhs = std::make_unique<MulExpr>(std::move(lhs), powExpr());
         break;
     }
   }
