@@ -1,0 +1,24 @@
+; vim:syntax=dosini
+
+; add
+a + a     = 2a
+n * a + a = (n+1)a
+a - a     = 0
+a + 0     = a
+
+; mul
+1 * a   = a
+0 * a   = 0
+a * a   = a^2
+
+; binom
+a^2 + 2ab + b^2 = (a+b)^2
+
+; pow
+a^n * a = a^(n + 1)
+a^0     = 1
+a^1     = a
+
+; complex
+;(a+bi) * (a-bi) = 
+
