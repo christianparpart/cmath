@@ -87,14 +87,14 @@ class SymbolExpr : public Expr {
 class BinaryExpr : public Expr {
  public:
   BinaryExpr(Precedence p,
-             char op,
+             const std::string& op,
              std::unique_ptr<Expr>&& left,
              std::unique_ptr<Expr>&& right);
 
   std::string str() const override;
 
  protected:
-  char operator_;
+  std::string operator_;
   std::unique_ptr<Expr> left_;
   std::unique_ptr<Expr> right_;
 };
@@ -138,6 +138,24 @@ class DivExpr : public BinaryExpr {
 class PowExpr : public BinaryExpr {
  public:
   PowExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right);
+
+  Number calculate(const SymbolTable& t) const override;
+  std::unique_ptr<Expr> clone() const override;
+  bool compare(const Expr* other) const override;
+};
+
+class EquExpr : public BinaryExpr {
+ public:
+  EquExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right);
+
+  Number calculate(const SymbolTable& t) const override;
+  std::unique_ptr<Expr> clone() const override;
+  bool compare(const Expr* other) const override;
+};
+
+class DefineExpr : public BinaryExpr {
+ public:
+  DefineExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right);
 
   Number calculate(const SymbolTable& t) const override;
   std::unique_ptr<Expr> clone() const override;

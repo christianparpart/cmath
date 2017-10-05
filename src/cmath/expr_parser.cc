@@ -144,7 +144,9 @@ bool ExprTokenizer::next() {
       return true;
     case ':':
       currentChar_++;
-      if (!eof() && *currentChar_ == '=') {
+      printf(":\n");
+      if (currentChar_ != expression_.end()  && *currentChar_ == '=') {
+        printf("=\n");
         currentChar_++;
         currentToken_.setToken(Token::Define);
         return true;
@@ -248,7 +250,27 @@ Result<std::unique_ptr<Expr>> ExprParser::parse() {
 }
 
 std::unique_ptr<Expr> ExprParser::expr() {
-  return addExpr();
+  return relExpr();
+}
+
+std::unique_ptr<Expr> ExprParser::relExpr() {
+  auto lhs = addExpr();
+  while (!currentToken_.eof()) {
+    switch (currentToken()) {
+      case Token::Define:
+        printf("define:\n");
+        nextToken();
+        lhs = std::make_unique<DefineExpr>(std::move(lhs), addExpr());
+        break;
+      case Token::Equ:
+        nextToken();
+        lhs = std::make_unique<EquExpr>(std::move(lhs), addExpr());
+        break;
+      default:
+        return lhs;
+    }
+  }
+  return lhs;
 }
 
 std::unique_ptr<Expr> ExprParser::addExpr() {

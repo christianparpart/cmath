@@ -44,9 +44,13 @@ void dumpSymbols(const SymbolTable& symbols) {
 void calculate(const std::string expression, const SymbolTable& st) {
   Result<std::unique_ptr<Expr>> e = parseExpression(expression);
   if (!e)
-    throw e;
+    throw e.error();
 
-  std::cout << (*e)->str() << " = " << simple((*e)->calculate(st)) << '\n';
+  if (const auto d = dynamic_cast<DefineExpr*>(e->get())) {
+    std::cout << "Define " << d->str() << '\n';
+  } else {
+    std::cout << (*e)->str() << " = " << simple((*e)->calculate(st)) << '\n';
+  }
 }
 
 int main(int argc, const char* argv[]) {

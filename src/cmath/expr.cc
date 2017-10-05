@@ -124,7 +124,7 @@ bool SymbolExpr::compare(const Expr* other) const {
 // }}}
 // {{{ BinaryExpr
 BinaryExpr::BinaryExpr(Precedence p,
-                       char op,
+                       const std::string& op,
                        std::unique_ptr<Expr>&& left,
                        std::unique_ptr<Expr>&& right)
     : Expr(p), operator_(op), left_(std::move(left)), right_(std::move(right)) {}
@@ -149,7 +149,7 @@ std::string BinaryExpr::str() const {
 // }}}
 // {{{ PlusExpr
 PlusExpr::PlusExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
-    : BinaryExpr(Precedence::Addition, '+', std::move(left), std::move(right)) {}
+    : BinaryExpr(Precedence::Addition, "+", std::move(left), std::move(right)) {}
 
 Number PlusExpr::calculate(const SymbolTable& t) const {
   return left_->calculate(t) + right_->calculate(t);
@@ -168,7 +168,7 @@ bool PlusExpr::compare(const Expr* other) const {
 // }}}
 // {{{ MinusExpr
 MinusExpr::MinusExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
-    : BinaryExpr(Precedence::Addition, '-', std::move(left), std::move(right)) {}
+    : BinaryExpr(Precedence::Addition, "-", std::move(left), std::move(right)) {}
 
 Number MinusExpr::calculate(const SymbolTable& t) const {
   return left_->calculate(t) - right_->calculate(t);
@@ -187,7 +187,7 @@ bool MinusExpr::compare(const Expr* other) const {
 // }}}
 // {{{ MulExpr
 MulExpr::MulExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
-    : BinaryExpr(Precedence::Multiplication, '*', std::move(left), std::move(right)) {}
+    : BinaryExpr(Precedence::Multiplication, "*", std::move(left), std::move(right)) {}
 
 Number MulExpr::calculate(const SymbolTable& t) const {
   return left_->calculate(t) * right_->calculate(t);
@@ -206,7 +206,7 @@ bool MulExpr::compare(const Expr* other) const {
 // }}}
 // {{{ DivExpr
 DivExpr::DivExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
-    : BinaryExpr(Precedence::Multiplication, '/', std::move(left), std::move(right)) {}
+    : BinaryExpr(Precedence::Multiplication, "/", std::move(left), std::move(right)) {}
 
 Number DivExpr::calculate(const SymbolTable& t) const {
   return left_->calculate(t) / right_->calculate(t);
@@ -225,7 +225,7 @@ bool DivExpr::compare(const Expr* other) const {
 // }}}
 // {{{ PowExpr
 PowExpr::PowExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
-    : BinaryExpr(Precedence::Power, '^', std::move(left), std::move(right)) {}
+    : BinaryExpr(Precedence::Power, "^", std::move(left), std::move(right)) {}
 
 Number PowExpr::calculate(const SymbolTable& t) const {
   Number a = left_->calculate(t);
@@ -239,6 +239,48 @@ std::unique_ptr<Expr> PowExpr::clone() const {
 
 bool PowExpr::compare(const Expr* other) const {
   if (auto e = dynamic_cast<const PowExpr*>(other))
+    return e->left_->compare(left_.get()) && e->right_->compare(right_.get());
+
+  return false;
+}
+// }}}
+// {{{ EquExpr
+EquExpr::EquExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
+    : BinaryExpr(Precedence::Relation, "=", std::move(left), std::move(right)) {}
+
+Number EquExpr::calculate(const SymbolTable& t) const {
+  Number a = left_->calculate(t);
+  Number b = right_->calculate(t);
+  return a == b ? 1 : 0;
+}
+
+std::unique_ptr<Expr> EquExpr::clone() const {
+  return std::make_unique<EquExpr>(left_->clone(), right_->clone());
+}
+
+bool EquExpr::compare(const Expr* other) const {
+  if (auto e = dynamic_cast<const EquExpr*>(other))
+    return e->left_->compare(left_.get()) && e->right_->compare(right_.get());
+
+  return false;
+}
+// }}}
+// {{{ DefineExpr
+DefineExpr::DefineExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
+    : BinaryExpr(Precedence::Relation, ":=", std::move(left), std::move(right)) {}
+
+Number DefineExpr::calculate(const SymbolTable& t) const {
+  Number a = left_->calculate(t);
+  Number b = right_->calculate(t);
+  return a == b ? 1 : 0;
+}
+
+std::unique_ptr<Expr> DefineExpr::clone() const {
+  return std::make_unique<DefineExpr>(left_->clone(), right_->clone());
+}
+
+bool DefineExpr::compare(const Expr* other) const {
+  if (auto e = dynamic_cast<const DefineExpr*>(other))
     return e->left_->compare(left_.get()) && e->right_->compare(right_.get());
 
   return false;
