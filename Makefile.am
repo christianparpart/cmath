@@ -67,6 +67,7 @@ cmathi_LDADD = \
 	$(AM_LDFLAGS)
 
 cmathi_SOURCES = \
+	src/cmathi/console.cc \
 	src/cmathi/main.cc
 
 pkgconfigdir = $(libdir)/pkgconfig

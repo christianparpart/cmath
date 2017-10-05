@@ -100,6 +100,9 @@ std::ostream& operator<<(std::ostream& os, Token t) {
 }
 
 bool ExprTokenizer::next() {
+  while (currentChar_ != expression_.end() && std::isspace(*currentChar_))
+    currentChar_++;
+
   if (currentChar_ == expression_.end()) {
     currentToken_.setToken(Token::Eof);
     return false;

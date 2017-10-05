@@ -5,14 +5,12 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
+#include "console.h"
 #include <cmath/expr.h>
 #include <cmath/expr_parser.h>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <stdio.h>
-#include <readline/readline.h>
-#include <readline/history.h>
 
 using namespace cmath;
 
@@ -56,13 +54,14 @@ int main(int argc, const char* argv[]) {
     SymbolTable symbols;
     declareStandardSymbols(&symbols);
     dumpSymbols(symbols);
+    Readline input(".cmathirc");;
+    input.addHistory(u8"e^(i*π) + 1");
 
     for (;;) {
-      char* line = readline(": ");
+      const char* line = input.getline(": ");
       if (line == nullptr) // EOF
         return 0;
       else if (*line != '\0') {
-        add_history(line);
         calculate(line, symbols);
       }
     }
