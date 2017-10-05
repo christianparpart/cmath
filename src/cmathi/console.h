@@ -8,12 +8,13 @@
 #pragma once
 
 #include <string>
+#include <tuple>
 
 class ConsoleReader {
  public:
   virtual ~ConsoleReader() {}
 
-  virtual const char* getline(const char* prompt) = 0;
+  virtual std::tuple<bool, std::string> getline(const char* prompt) = 0;
   virtual void addHistory(const std::string& line) = 0;
 };
 
@@ -22,6 +23,6 @@ class Readline : public ConsoleReader {
   explicit Readline(const std::string& historyFilename);
   ~Readline();
 
-  const char* getline(const char* prompt) override;
+  std::tuple<bool, std::string> getline(const char* prompt) override;
   void addHistory(const std::string& line) override;
 };

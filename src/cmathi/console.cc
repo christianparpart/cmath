@@ -11,20 +11,22 @@
 #include <stdio.h>
 
 Readline::Readline(const std::string& historyFilename) {
-  using_history();
+  // using_history();
 }
 
 Readline::~Readline() {
   //.
 }
 
-const char* Readline::getline(const char* prompt) {
+std::tuple<bool, std::string> Readline::getline(const char* prompt) {
   char* line = readline(prompt);
+  if (!line)
+    return {true, ""};
 
-  if (line && *line)
+  if (*line)
     addHistory(line);
 
-  return line;
+  return {false, line};
 }
 
 void Readline::addHistory(const std::string& line) {

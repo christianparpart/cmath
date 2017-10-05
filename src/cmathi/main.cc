@@ -58,10 +58,10 @@ int main(int argc, const char* argv[]) {
     input.addHistory(u8"e^(i*π) + 1");
 
     for (;;) {
-      const char* line = input.getline(": ");
-      if (line == nullptr) // EOF
+      auto [eof, line] = input.getline(": ");
+      if (eof) {
         return 0;
-      else if (*line != '\0') {
+      } else if (!line.empty()) {
         calculate(line, symbols);
       }
     }

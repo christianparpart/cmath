@@ -168,7 +168,7 @@ bool ExprTokenizer::next() {
       return true;
     case '>':
       // > >=
-      if (!eof() && *currentChar_ == '=') {
+      if (currentChar_ != expression_.end() && *currentChar_ == '=') {
         currentChar_++;
         currentToken_.setToken(Token::GreaterEqu);
       } else {
@@ -183,7 +183,7 @@ bool ExprTokenizer::next() {
   if (std::isdigit(*currentChar_)) {
     Number n = *currentChar_ - '0';
     currentChar_++;
-    while (!eof() && std::isdigit(*currentChar_)) {
+    while (currentChar_ != expression_.end()  && std::isdigit(*currentChar_)) {
       n *= 10;
       n += *currentChar_ - '0';
       currentChar_++;
@@ -237,7 +237,7 @@ Result<std::unique_ptr<Expr>> parseExpression(const std::u16string& expression) 
 
 Result<std::unique_ptr<Expr>> ExprParser::parse() {
   try {
-    if (auto e = addExpr(); eof()) {
+    if (auto e = addExpr(); currentToken_.eof()) {
       return e;
     } else {
       return make_error_code(UnexpectedToken);
@@ -253,7 +253,7 @@ std::unique_ptr<Expr> ExprParser::expr() {
 
 std::unique_ptr<Expr> ExprParser::addExpr() {
   auto lhs = mulExpr();
-  while (!eof()) {
+  while (!currentToken_.eof()) {
     switch (currentToken()) {
       case Token::Plus:
         nextToken();
@@ -298,7 +298,7 @@ std::unique_ptr<Expr> ExprParser::mulExpr() {
 
 std::unique_ptr<Expr> ExprParser::powExpr() {
   auto lhs = primaryExpr();
-  while (!eof()) {
+  while (!currentToken_.eof()) {
     switch (currentToken()) {
       case Token::Pow:
         nextToken();

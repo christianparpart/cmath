@@ -119,7 +119,6 @@ class ExprParser {
   // ExprTokenizer end() { return ExprTokenizer(); }
 
  private:
-  bool eof() const { return currentToken_.eof(); }
   Token nextToken();
   Token currentToken();
   void consumeToken(Token t);
