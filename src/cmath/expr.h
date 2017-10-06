@@ -75,6 +75,8 @@ class SymbolExpr : public Expr {
  public:
   explicit SymbolExpr(const Symbol& n);
 
+  const Symbol& symbolName() const noexcept { return symbol_; }
+
   std::string str() const override;
   Number calculate(const SymbolTable& t) const override;
   std::unique_ptr<Expr> clone() const override;
@@ -92,6 +94,9 @@ class BinaryExpr : public Expr {
              std::unique_ptr<Expr>&& right);
 
   std::string str() const override;
+
+  Expr* left() const { return left_.get(); }
+  Expr* right() const { return right_.get(); }
 
  protected:
   std::string operator_;
@@ -155,7 +160,10 @@ class EquExpr : public BinaryExpr {
 
 class DefineExpr : public BinaryExpr {
  public:
+  // definiendum := definiens
   DefineExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right);
+
+  const Symbol& symbolName() const;
 
   Number calculate(const SymbolTable& t) const override;
   std::unique_ptr<Expr> clone() const override;

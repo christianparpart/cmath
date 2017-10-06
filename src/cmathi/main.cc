@@ -41,13 +41,14 @@ void dumpSymbols(const SymbolTable& symbols) {
     std::cout << e.first << " = " << e.second->str() << std::endl;
 }
 
-void calculate(const std::string expression, const SymbolTable& st) {
+void calculate(const std::string expression, SymbolTable& st) {
   Result<std::unique_ptr<Expr>> e = parseExpression(expression);
   if (!e)
     throw e.error();
 
   if (const auto d = dynamic_cast<DefineExpr*>(e->get())) {
     std::cout << "Define " << d->str() << '\n';
+    st[d->symbolName()] = d->right()->clone();
   } else {
     std::cout << (*e)->str() << " = " << simple((*e)->calculate(st)) << '\n';
   }
@@ -57,7 +58,6 @@ int main(int argc, const char* argv[]) {
   try {
     SymbolTable symbols;
     declareStandardSymbols(&symbols);
-    dumpSymbols(symbols);
     Readline input(".cmathirc");;
     input.addHistory(u8"e^(i*π) + 1");
 
@@ -65,6 +65,8 @@ int main(int argc, const char* argv[]) {
       auto [eof, line] = input.getline(": ");
       if (eof) {
         return 0;
+      } else if (line == "dump") {
+        dumpSymbols(symbols);
       } else if (!line.empty()) {
         calculate(line, symbols);
       }

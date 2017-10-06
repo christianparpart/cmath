@@ -24,8 +24,7 @@ inline Result<T>::Result(const std::error_code& ec)
   : success_(false),
     error_(ec) {
   if (!error_) {
-    // "received an error_code in Result, but there is no error."
-    throw "FIXME: RAISE(InternalError);";
+    throw "FIXME: received an error_code in Result, but there is no error.";
   }
 }
 

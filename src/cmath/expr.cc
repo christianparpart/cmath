@@ -267,7 +267,11 @@ bool EquExpr::compare(const Expr* other) const {
 // }}}
 // {{{ DefineExpr
 DefineExpr::DefineExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
-    : BinaryExpr(Precedence::Relation, ":=", std::move(left), std::move(right)) {}
+    : BinaryExpr(Precedence::Relation, ":=", std::move(left), std::move(right)) {
+  if (!dynamic_cast<SymbolExpr*>(this->left())) {
+    throw "DefineExpr: no symbol found on left-hand side, but expects one";
+  }
+}
 
 Number DefineExpr::calculate(const SymbolTable& t) const {
   Number a = left_->calculate(t);
@@ -284,6 +288,13 @@ bool DefineExpr::compare(const Expr* other) const {
     return e->left_->compare(left_.get()) && e->right_->compare(right_.get());
 
   return false;
+}
+
+const Symbol& DefineExpr::symbolName() const {
+  if (auto e = dynamic_cast<const SymbolExpr*>(left()))
+    return e->symbolName();
+
+  throw "DefineExpr: no symbol found on left-hand side, but expects one";
 }
 // }}}
 
