@@ -48,7 +48,7 @@ check_PROGRAMS += cmath_test
 cmath_test_SOURCES = \
 	src/cmath/expr_test.cc
 
-xzero_test_LDADD = \
+cmath_test_LDADD = \
 	libcmath.a \
 	$(AM_LDFLAGS)
 

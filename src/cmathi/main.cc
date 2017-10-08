@@ -41,34 +41,51 @@ void dumpSymbols(const SymbolTable& symbols) {
     std::cout << e.first << " = " << e.second->str() << std::endl;
 }
 
-void calculate(const std::string expression, SymbolTable& st) {
-  Result<std::unique_ptr<Expr>> e = parseExpression(expression);
-  if (!e)
-    throw e.error();
-
-  if (const auto d = dynamic_cast<DefineExpr*>(e->get())) {
-    std::cout << "Define " << d->str() << '\n';
-    st[d->symbolName()] = d->right()->clone();
-  } else {
-    std::cout << (*e)->str() << " = " << simple((*e)->calculate(st)) << '\n';
-  }
+void printCommands() {
+  std::cout << "Valid input:\n"
+            << "?             prints this help\n"
+            << "vars          prints all defined variables\n"
+            << "EXPR          evaluates given expression\n"
+            << "SYM := EXPR   defines a new constant by given expression, e.g. a := 3\n"
+            << "quit          Exists program\n";
 }
 
 int main(int argc, const char* argv[]) {
   try {
     SymbolTable symbols;
     declareStandardSymbols(&symbols);
-    Readline input(".cmathirc");;
+    Readline input(".cmathirc");
+    ;
     input.addHistory(u8"e^(i*π) + 1");
 
     for (;;) {
       auto [eof, line] = input.getline(": ");
-      if (eof) {
+      if (eof || line == "quit") {
         return 0;
-      } else if (line == "dump") {
+      }
+
+      if (line.empty())
+        continue;
+
+      if (line == "vars") {
         dumpSymbols(symbols);
-      } else if (!line.empty()) {
-        calculate(line, symbols);
+        continue;
+      }
+
+      if (line == "?") {
+        printCommands();
+        continue;
+      }
+
+      Result<std::unique_ptr<Expr>> e = parseExpression(line);
+      if (e.error()) {
+        std::error_code ec = e.error();
+        std::cerr << ec.category().name() << ": " << ec.message() << '\n';
+      } else if (const auto d = dynamic_cast<DefineExpr*>(e->get())) {
+        std::cout << "define " << d->str() << '\n';
+        symbols[d->symbolName()] = d->right()->clone();
+      } else {
+        std::cout << (*e)->str() << " = " << simple((*e)->calculate(symbols)) << '\n';
       }
     }
 
