@@ -55,8 +55,9 @@ int main(int argc, const char* argv[]) {
     SymbolTable symbols;
     declareStandardSymbols(&symbols);
     Readline input(".cmathirc");
-    ;
     input.addHistory(u8"e^(i*π) + 1");
+
+    std::cout << "Type ? for help.\n";
 
     for (;;) {
       auto [eof, line] = input.getline(": ");
