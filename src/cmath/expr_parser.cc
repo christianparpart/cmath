@@ -320,8 +320,9 @@ std::unique_ptr<Expr> ExprParser::powExpr() {
   while (!currentToken_.eof()) {
     switch (currentToken()) {
       case Token::Pow:
+        // a^b^c = a^(b^c)
         nextToken();
-        lhs = std::make_unique<PowExpr>(std::move(lhs), primaryExpr());
+        lhs = std::make_unique<PowExpr>(std::move(lhs), powExpr());
         break;
       default:
         return lhs;
