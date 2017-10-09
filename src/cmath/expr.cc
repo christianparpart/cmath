@@ -137,7 +137,7 @@ std::string BinaryExpr::str() const {
   else
     s << *left_;
 
-  s << operator_;
+  s << ' ' << operator_ << ' ';
 
   if (right_->precedence() < precedence())
     s << '(' << *right_ << ')';
@@ -260,6 +260,31 @@ std::unique_ptr<Expr> EquExpr::clone() const {
 
 bool EquExpr::compare(const Expr* other) const {
   if (auto e = dynamic_cast<const EquExpr*>(other))
+    return e->left_->compare(left_.get()) && e->right_->compare(right_.get());
+
+  return false;
+}
+// }}}
+// {{{ LessExpr
+LessExpr::LessExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
+    : BinaryExpr(Precedence::Relation, "<", std::move(left), std::move(right)) {}
+
+Number LessExpr::calculate(const SymbolTable& t) const {
+  Number a = left_->calculate(t);
+  Number b = right_->calculate(t);
+
+  if (!a.imag() && !b.imag())
+    return a.real() < b.real() ? 1 : 0;
+  else
+    return 0;
+}
+
+std::unique_ptr<Expr> LessExpr::clone() const {
+  return std::make_unique<LessExpr>(left_->clone(), right_->clone());
+}
+
+bool LessExpr::compare(const Expr* other) const {
+  if (auto e = dynamic_cast<const LessExpr*>(other))
     return e->left_->compare(left_.get()) && e->right_->compare(right_.get());
 
   return false;

@@ -152,17 +152,22 @@ bool ExprTokenizer::next() {
         throw make_error_code(ExprParser::UnexpectedCharacter);
       }
     case '<':
-      // < <= <=>
+      // < <> <= <=>
       currentChar_++;
-      if (!eof() && *currentChar_ == '=') {
+      if (eof()) {                                  // <
+        currentToken_.setToken(Token::Less);
+      } else if (*currentChar_ == '>') {            // <>
         currentChar_++;
-        if (!eof() && *currentChar_ == '>') {
+        currentToken_.setToken(Token::NotEqu);
+      } else if (*currentChar_ == '=') {
+        currentChar_++;
+        if (!eof() && *currentChar_ == '>') {       // <=>
           currentChar_++;
           currentToken_.setToken(Token::Equivalence);
-        } else {
+        } else {                                    // <=
           currentToken_.setToken(Token::LessEqu);
         }
-      } else {
+      } else {                                      // <
         currentToken_.setToken(Token::Less);
       }
       return true;
@@ -174,6 +179,10 @@ bool ExprTokenizer::next() {
       } else {
         currentToken_.setToken(Token::Greater);
       }
+      return true;
+    case '=':
+      currentChar_++;
+      currentToken_.setToken(Token::Equ);
       return true;
     default:
       break;
@@ -192,10 +201,19 @@ bool ExprTokenizer::next() {
     return true;
   }
 
-  // variables
-  if (isalpha(*currentChar_) || isGreekLetter(*currentChar_)) {
+  // greek symbols as variables
+  if (isGreekLetter(*currentChar_)) {
     std::u16string v;
     v += *currentChar_++;
+    currentToken_.setSymbol(toUtf8(v));
+    return true;
+  }
+
+  // latin multi-letter symbols
+  if (isalpha(*currentChar_)) {
+    std::u16string v;
+    do v += *currentChar_++;
+    while (currentChar_ != expression_.end() && isalpha(*currentChar_));
     currentToken_.setSymbol(toUtf8(v));
     return true;
   }
@@ -262,6 +280,10 @@ std::unique_ptr<Expr> ExprParser::relExpr() {
       case Token::Equ:
         nextToken();
         lhs = std::make_unique<EquExpr>(std::move(lhs), addExpr());
+        break;
+      case Token::Less:
+        nextToken();
+        lhs = std::make_unique<LessExpr>(std::move(lhs), addExpr());
         break;
       default:
         return lhs;

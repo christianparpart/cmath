@@ -158,6 +158,15 @@ class EquExpr : public BinaryExpr {
   bool compare(const Expr* other) const override;
 };
 
+class LessExpr : public BinaryExpr {
+ public:
+  LessExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right);
+
+  Number calculate(const SymbolTable& t) const override;
+  std::unique_ptr<Expr> clone() const override;
+  bool compare(const Expr* other) const override;
+};
+
 class DefineExpr : public BinaryExpr {
  public:
   // definiendum := definiens
