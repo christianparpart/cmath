@@ -34,17 +34,17 @@ inline std::string toUtf8(char16_t ch) {
 void ExprToken::setToken(Token t) {
   token_ = t;
 
-//   switch (token_) {
-//     case Token::Number:
-//       std::cout << "Token: " << t << number_ << std::endl;
-//       break;
-//     case Token::Symbol:
-//       std::cout << "Token: " << t << symbol_ << std::endl;
-//       break;
-//     default:
-//       std::cout << "Token: " << t << std::endl;
-//       break;
-//   }
+  //   switch (token_) {
+  //     case Token::Number:
+  //       std::cout << "Token: " << t << number_ << std::endl;
+  //       break;
+  //     case Token::Symbol:
+  //       std::cout << "Token: " << t << symbol_ << std::endl;
+  //       break;
+  //     default:
+  //       std::cout << "Token: " << t << std::endl;
+  //       break;
+  //   }
 }
 
 void ExprToken::setSymbol(const Symbol& s) {
@@ -57,10 +57,12 @@ void ExprToken::setNumber(Number n) {
   setToken(Token::Number);
 }
 
-ExprTokenizer::ExprTokenizer(const std::u16string& expression)
-    : expression_(expression), currentChar_(expression_.cbegin()), currentToken_() {}
+ExprTokenizer::ExprTokenizer(std::u16string::const_iterator begin,
+                             std::u16string::const_iterator end)
+    : currentChar_(begin), endChar_(end), currentToken_() {}
 
-ExprTokenizer::ExprTokenizer() : ExprTokenizer(std::u16string()) {}
+ExprTokenizer::ExprTokenizer()
+    : ExprTokenizer(std::u16string::const_iterator(), std::u16string::const_iterator()) {}
 
 bool ExprTokenizer::eof() const {
   return currentToken_.token() == Token::Eof;
@@ -126,10 +128,10 @@ std::ostream& operator<<(std::ostream& os, Token t) {
 }
 
 bool ExprTokenizer::next() {
-  while (currentChar_ != expression_.end() && std::isspace(*currentChar_))
+  while (hasBytesPending() && std::isspace(*currentChar_))
     currentChar_++;
 
-  if (currentChar_ == expression_.end()) {
+  if (!hasBytesPending()) {
     currentToken_.setToken(Token::Eof);
     return false;
   }
@@ -174,7 +176,7 @@ bool ExprTokenizer::next() {
       return true;
     case ':':
       currentChar_++;
-      if (currentChar_ != expression_.end()  && *currentChar_ == '=') {
+      if (hasBytesPending() && *currentChar_ == '=') {
         currentChar_++;
         currentToken_.setToken(Token::Define);
         return true;
@@ -184,26 +186,26 @@ bool ExprTokenizer::next() {
     case '<':
       // < <> <= <=>
       currentChar_++;
-      if (eof()) {                                  // <
+      if (!hasBytesPending()) {  // <
         currentToken_.setToken(Token::Less);
-      } else if (*currentChar_ == '>') {            // <>
+      } else if (*currentChar_ == '>') {  // <>
         currentChar_++;
         currentToken_.setToken(Token::NotEqu);
       } else if (*currentChar_ == '=') {
         currentChar_++;
-        if (!eof() && *currentChar_ == '>') {       // <=>
+        if (!hasBytesPending() && *currentChar_ == '>') {  // <=>
           currentChar_++;
           currentToken_.setToken(Token::Equivalence);
-        } else {                                    // <=
+        } else {  // <=
           currentToken_.setToken(Token::LessEqu);
         }
-      } else {                                      // <
+      } else {  // <
         currentToken_.setToken(Token::Less);
       }
       return true;
     case '>':
       // > >=
-      if (currentChar_ != expression_.end() && *currentChar_ == '=') {
+      if (hasBytesPending() && *currentChar_ == '=') {
         currentChar_++;
         currentToken_.setToken(Token::GreaterEqu);
       } else {
@@ -222,7 +224,7 @@ bool ExprTokenizer::next() {
   if (std::isdigit(*currentChar_)) {
     Number n = *currentChar_ - '0';
     currentChar_++;
-    while (currentChar_ != expression_.end()  && std::isdigit(*currentChar_)) {
+    while (hasBytesPending() && std::isdigit(*currentChar_)) {
       n *= 10;
       n += *currentChar_ - '0';
       currentChar_++;
@@ -242,8 +244,9 @@ bool ExprTokenizer::next() {
   // latin multi-letter symbols
   if (isalpha(*currentChar_)) {
     std::u16string v;
-    do v += *currentChar_++;
-    while (currentChar_ != expression_.end() && isalpha(*currentChar_));
+    do
+      v += *currentChar_++;
+    while (hasBytesPending() && isalpha(*currentChar_));
     currentToken_.setSymbol(toUtf8(v));
     return true;
   }
@@ -253,25 +256,21 @@ bool ExprTokenizer::next() {
 
 ExprParser::ExprParser(const std::string& e) : ExprParser(toUtf16(e)) {}
 
-ExprParser::ExprParser(const std::u16string& e) : expression_(e), currentToken_(e) {
+ExprParser::ExprParser(const std::u16string& e)
+    : expression_(e), currentToken_(expression_.cbegin(), expression_.cend()) {
   nextToken();
 }
 
 ExprTokenizer& ExprTokenizer::operator=(const ExprTokenizer& t) {
-  expression_ = t.expression_;
-  currentChar_ = std::next(expression_.cbegin(), t.offset());
+  currentChar_ = t.currentChar_;
+  endChar_ = t.endChar_;
   currentToken_ = t.currentToken_;
 
   return *this;
 }
 
-std::string ExprTokenizer::expression() const {
-  return toUtf8(expression_);
-}
-
 std::ostream& operator<<(std::ostream& os, const ExprTokenizer& t) {
-  os << "T{" << std::distance(t.expression_.begin(), t.currentChar_) << ", \""
-     << t.expression() << "\"}";
+  os << "T{" << std::distance(t.currentChar(), t.endChar()) << "}";
   return os;
 }
 

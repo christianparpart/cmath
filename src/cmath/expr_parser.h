@@ -16,26 +16,26 @@
 namespace cmath {
 
 enum class Token {  // {{{
-  Eof,          // <artificial delimiter>
-  Number,       // 1234, -5
-  Symbol,       // a, b, pi, phi, ...
-  Equ,          // =
-  NotEqu,       // <>
-  LessEqu,      // <=
-  GreaterEqu,   // >=
-  Less,         // <
-  Greater,      // >
-  Plus,         // +
-  Minus,        // -
-  Mul,          // *
-  Div,          // /
-  Pow,          // ^
-  Fac,          // !
-  RndOpen,      // (
-  RndClose,     // )
-  Define,       // :=
-  Equivalence,  // <=>
-};              // }}}
+  Eof,              // <artificial delimiter>
+  Number,           // 1234, -5
+  Symbol,           // a, b, pi, phi, ...
+  Equ,              // =
+  NotEqu,           // <>
+  LessEqu,          // <=
+  GreaterEqu,       // >=
+  Less,             // <
+  Greater,          // >
+  Plus,             // +
+  Minus,            // -
+  Mul,              // *
+  Div,              // /
+  Pow,              // ^
+  Fac,              // !
+  RndOpen,          // (
+  RndClose,         // )
+  Define,           // :=
+  Equivalence,      // <=>
+};                  // }}}
 
 std::ostream& operator<<(std::ostream& os, Token t);
 
@@ -59,16 +59,13 @@ class ExprToken {
 
 class ExprTokenizer {
  public:
-  explicit ExprTokenizer(const std::u16string& expression);
+  ExprTokenizer(std::u16string::const_iterator begin, std::u16string::const_iterator end);
   ExprTokenizer();
 
   ExprTokenizer& operator=(const ExprTokenizer& t);
 
-  std::string expression() const;
-
   bool next();
   bool eof() const;
-  size_t offset() const { return std::distance(expression_.begin(), currentChar_); }
 
   const ExprToken& operator*() const { return currentToken_; }
   const ExprToken* operator->() const { return &currentToken_; }
@@ -89,8 +86,13 @@ class ExprTokenizer {
   friend std::ostream& operator<<(std::ostream& os, const ExprTokenizer& t);
 
  private:
-  std::u16string expression_;
+  std::u16string::const_iterator currentChar() const { return currentChar_; }
+  std::u16string::const_iterator endChar() const { return endChar_; }
+  bool hasBytesPending() const { return currentChar() != endChar(); }
+
+ private:
   std::u16string::const_iterator currentChar_;
+  std::u16string::const_iterator endChar_;
   ExprToken currentToken_;
 };
 
@@ -107,8 +109,10 @@ class ExprParser {
   enum ErrorCode { UnexpectedCharacter, UnexpectedToken, UnexpectedEof };
   class ErrorCategory;
 
-  // ExprTokenizer begin() { return ExprTokenizer(expression_); }
-  // ExprTokenizer end() { return ExprTokenizer(); }
+  ExprTokenizer begin() {
+    return ExprTokenizer(expression_.cbegin(), expression_.cend());
+  }
+  ExprTokenizer end() { return ExprTokenizer(expression_.cend(), expression_.cend()); }
 
  private:
   Token nextToken();
