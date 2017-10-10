@@ -58,6 +58,27 @@ class NumberExpr : public Expr {
   Number literal_;
 };
 
+class UnaryExpr : public Expr {
+ public:
+  UnaryExpr(Precedence precedence, std::unique_ptr<Expr>&& subExpr)
+      : Expr(precedence), subExpr_(std::move(subExpr)) {}
+
+  const Expr* subExpr() const { return subExpr_.get(); }
+
+ protected:
+  std::unique_ptr<Expr> subExpr_;
+};
+
+class FacExpr : public UnaryExpr {
+ public:
+  explicit FacExpr(std::unique_ptr<Expr>&& subExpr);
+
+  std::string str() const override;
+  Number calculate(const SymbolTable& t) const override;
+  std::unique_ptr<Expr> clone() const override;
+  bool compare(const Expr* other) const override;
+};
+
 class NegExpr : public Expr {
  public:
   explicit NegExpr(std::unique_ptr<Expr>&& e);

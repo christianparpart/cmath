@@ -223,6 +223,47 @@ bool DivExpr::compare(const Expr* other) const {
   return false;
 }
 // }}}
+// {{{ FacExpr
+FacExpr::FacExpr(std::unique_ptr<Expr>&& subExpr)
+    : UnaryExpr(Precedence::Number, std::move(subExpr)) {
+}
+
+std::string FacExpr::str() const {
+  std::stringstream s;
+  if (subExpr()->precedence() < precedence())
+    s << '(' << subExpr()->str() << ')';
+  else
+    s << subExpr()->str();
+
+  s << '!';
+
+  return s.str();
+}
+
+Number FacExpr::calculate(const SymbolTable& t) const {
+  Number y = 1;
+  Number i = 1;
+  Number n = subExpr()->calculate(t); 
+
+  while (i.real() <= n.real()) {
+    y *= i;
+    i += 1;
+  }
+
+  return y;
+}
+
+std::unique_ptr<Expr> FacExpr::clone() const {
+  return std::make_unique<FacExpr>(subExpr()->clone());
+}
+
+bool FacExpr::compare(const Expr* other) const {
+  if (auto e = dynamic_cast<const FacExpr*>(other))
+    return e->subExpr()->compare(subExpr());
+
+  return false;
+}
+// }}}
 // {{{ PowExpr
 PowExpr::PowExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
     : BinaryExpr(Precedence::Power, "^", std::move(left), std::move(right)) {}

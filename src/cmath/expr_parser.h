@@ -16,23 +16,23 @@
 namespace cmath {
 
 enum class Token {  // {{{
-  Eof,
-  Number,
-  Symbol,
-  Equ,
-  NotEqu,
-  LessEqu,
-  GreaterEqu,
-  Less,
-  Greater,
-  Plus,
-  Minus,
-  Mul,
-  Div,
-  Pow,
-  Fac,
-  RndOpen,
-  RndClose,
+  Eof,          // <artificial delimiter>
+  Number,       // 1234, -5
+  Symbol,       // a, b, pi, phi, ...
+  Equ,          // =
+  NotEqu,       // <>
+  LessEqu,      // <=
+  GreaterEqu,   // >=
+  Less,         // <
+  Greater,      // >
+  Plus,         // +
+  Minus,        // -
+  Mul,          // *
+  Div,          // /
+  Pow,          // ^
+  Fac,          // !
+  RndOpen,      // (
+  RndClose,     // )
   Define,       // :=
   Equivalence,  // <=>
 };              // }}}
@@ -47,17 +47,9 @@ class ExprToken {
   Number number() const { return number_; }
   const Symbol& symbol() const { return symbol_; }
 
-  void setToken(Token t) { token_ = t; }
-
-  void setSymbol(const Symbol& s) {
-    symbol_ = s;
-    setToken(Token::Symbol);
-  }
-
-  void setNumber(Number n) {
-    number_ = n;
-    setToken(Token::Number);
-  }
+  void setToken(Token t);
+  void setSymbol(const Symbol& s);
+  void setNumber(Number n);
 
  private:
   Token token_;
@@ -127,6 +119,7 @@ class ExprParser {
   std::unique_ptr<Expr> relExpr();      // < > = != <= >=
   std::unique_ptr<Expr> addExpr();      // + -
   std::unique_ptr<Expr> mulExpr();      // * /
+  std::unique_ptr<Expr> facExpr();      // !
   std::unique_ptr<Expr> powExpr();      // ^
   std::unique_ptr<Expr> primaryExpr();  // number symbol ( ! -
 

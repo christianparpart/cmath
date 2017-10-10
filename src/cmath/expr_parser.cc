@@ -31,6 +31,32 @@ inline std::string toUtf8(char16_t ch) {
   return toUtf8(s);
 }
 
+void ExprToken::setToken(Token t) {
+  token_ = t;
+
+//   switch (token_) {
+//     case Token::Number:
+//       std::cout << "Token: " << t << number_ << std::endl;
+//       break;
+//     case Token::Symbol:
+//       std::cout << "Token: " << t << symbol_ << std::endl;
+//       break;
+//     default:
+//       std::cout << "Token: " << t << std::endl;
+//       break;
+//   }
+}
+
+void ExprToken::setSymbol(const Symbol& s) {
+  symbol_ = s;
+  setToken(Token::Symbol);
+}
+
+void ExprToken::setNumber(Number n) {
+  number_ = n;
+  setToken(Token::Number);
+}
+
 ExprTokenizer::ExprTokenizer(const std::u16string& expression)
     : expression_(expression), currentChar_(expression_.cbegin()), currentToken_() {}
 
@@ -114,6 +140,10 @@ bool ExprTokenizer::next() {
   //           << '\n';
 
   switch (*currentChar_) {
+    case '!':
+      currentChar_++;
+      currentToken_.setToken(Token::Fac);
+      return true;
     case '+':
       currentChar_++;
       currentToken_.setToken(Token::Plus);
@@ -312,7 +342,7 @@ std::unique_ptr<Expr> ExprParser::addExpr() {
 }
 
 std::unique_ptr<Expr> ExprParser::mulExpr() {
-  auto lhs = powExpr();
+  auto lhs = facExpr();
   for (;;) {
     switch (currentToken()) {
       case Token::Eof:
@@ -320,11 +350,11 @@ std::unique_ptr<Expr> ExprParser::mulExpr() {
         return lhs;
       case Token::Mul:
         nextToken();
-        lhs = std::make_unique<MulExpr>(std::move(lhs), powExpr());
+        lhs = std::make_unique<MulExpr>(std::move(lhs), facExpr());
         break;
       case Token::Div:
         nextToken();
-        lhs = std::make_unique<DivExpr>(std::move(lhs), powExpr());
+        lhs = std::make_unique<DivExpr>(std::move(lhs), facExpr());
         break;
       default:
         return lhs;
@@ -335,6 +365,21 @@ std::unique_ptr<Expr> ExprParser::mulExpr() {
     }
   }
   return lhs;
+}
+
+std::unique_ptr<Expr> ExprParser::facExpr() {
+  auto lhs = powExpr();
+
+  for (;;) {
+    switch (currentToken()) {
+      case Token::Fac:
+        nextToken();
+        lhs = std::make_unique<FacExpr>(std::move(lhs));
+        break;
+      default:
+        return lhs;
+    }
+  }
 }
 
 std::unique_ptr<Expr> ExprParser::powExpr() {
