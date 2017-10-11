@@ -140,10 +140,6 @@ bool ExprTokenizer::next() {
   //           << '\n';
 
   switch (*currentChar_) {
-    case '!':
-      currentChar_++;
-      currentToken_.setToken(Token::Fac);
-      return true;
     case '+':
       currentChar_++;
       currentToken_.setToken(Token::Plus);
@@ -163,6 +159,10 @@ bool ExprTokenizer::next() {
     case '^':
       currentChar_++;
       currentToken_.setToken(Token::Pow);
+      return true;
+    case '!':
+      currentChar_++;
+      currentToken_.setToken(Token::Fac);
       return true;
     case '(':
       currentChar_++;
@@ -231,7 +231,7 @@ bool ExprTokenizer::next() {
     return true;
   }
 
-  // greek symbols as variables
+  // greek letters as symbols
   if (isGreekLetter(*currentChar_)) {
     std::u16string v;
     v += *currentChar_++;
