@@ -11,8 +11,6 @@
 #include <iostream>
 #include <locale>
 
-// TODO: skip spaces in ExprTokenizer
-
 namespace cmath {
 
 inline std::string toUtf8(const std::u16string& s) {
