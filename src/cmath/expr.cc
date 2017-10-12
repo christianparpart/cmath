@@ -60,6 +60,79 @@ bool NumberExpr::compare(const Expr* other) const {
   return false;
 }
 // }}}
+// {{{ NativeFunction
+NativeFunction::NativeFunction(const Symbol& name, Impl impl)
+    : Function(name), impl_(impl) {}
+
+Number NativeFunction::call(const SymbolTable& t, const NumberList& input) {
+  SymbolTable st(&t);
+  st.defineConstant("x", input[0]);
+  return calculate(st);
+}
+
+Number NativeFunction::calculate(const SymbolTable& t) const {
+  return impl_(t.getNumber("x"));
+}
+
+std::string NativeFunction::str() const {
+  return name_ + "(x) = native";
+}
+
+std::unique_ptr<Expr> NativeFunction::clone() const {
+  return std::make_unique<NativeFunction>(name_, impl_);
+}
+
+bool NativeFunction::compare(const Expr* other) const {
+  if (auto e = dynamic_cast<const NativeFunction*>(other))
+    return e->name_ == name_;  // XXX we only check the name
+
+  return false;
+}
+// }}}
+// {{{ CustomFunction
+CustomFunction::CustomFunction(const Symbol& name,
+                               const SymbolList& inputs,
+                               std::unique_ptr<Expr>&& expr)
+    : Function(name), inputs_(inputs), expr_(std::move(expr)) {}
+
+Number CustomFunction::call(const SymbolTable& t, const NumberList& inputs) {
+  SymbolTable st(&t);
+
+  for (size_t i = 0, e = inputs_.size(); i != e; ++i)
+    st.defineConstant(inputs_[i], inputs[i]);
+
+  return calculate(st);
+}
+
+Number CustomFunction::calculate(const SymbolTable& t) const {
+  return expr_->calculate(t);
+}
+
+std::string CustomFunction::str() const {
+  std::stringstream s;
+
+  s << name_ << "(";
+  for (size_t i = 0, e = inputs_.size(); i != e; ++i) {
+    if (i)
+      s << ", ";
+    s << inputs_[i];
+  }
+  s << ") = " << expr_->str();
+
+  return s.str();
+}
+
+std::unique_ptr<Expr> CustomFunction::clone() const {
+  return std::make_unique<CustomFunction>(name_, inputs_, expr_->clone());
+}
+
+bool CustomFunction::compare(const Expr* other) const {
+  if (auto e = dynamic_cast<const CustomFunction*>(other))
+    return e->name_ == name_;  // XXX we only check the name
+
+  return false;
+}
+// }}}
 // {{{ NegExpr
 NegExpr::NegExpr(std::unique_ptr<Expr>&& e)
     : Expr(Precedence::Number), subExpr_(std::move(e)) {}
@@ -103,10 +176,9 @@ std::string SymbolExpr::str() const {
 }
 
 Number SymbolExpr::calculate(const SymbolTable& t) const {
-  assert(t.find(symbol_) != t.end());
-  auto i = t.find(symbol_);
-  if (i != t.end())
-    return i->second->calculate(t);
+  auto i = t.lookupSymbol(symbol_);
+  if (i != nullptr)
+    return i->calculate(t);
   else
     return 0;
 }
@@ -225,8 +297,7 @@ bool DivExpr::compare(const Expr* other) const {
 // }}}
 // {{{ FacExpr
 FacExpr::FacExpr(std::unique_ptr<Expr>&& subExpr)
-    : UnaryExpr(Precedence::Number, std::move(subExpr)) {
-}
+    : UnaryExpr(Precedence::Number, std::move(subExpr)) {}
 
 std::string FacExpr::str() const {
   std::stringstream s;
@@ -243,7 +314,7 @@ std::string FacExpr::str() const {
 Number FacExpr::calculate(const SymbolTable& t) const {
   Number y = 1;
   Number i = 1;
-  Number n = subExpr()->calculate(t); 
+  Number n = subExpr()->calculate(t);
 
   while (i.real() <= n.real()) {
     y *= i;
@@ -271,7 +342,12 @@ PowExpr::PowExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
 Number PowExpr::calculate(const SymbolTable& t) const {
   Number a = left_->calculate(t);
   Number b = right_->calculate(t);
-  return std::pow(a, b);
+  if (!a.imag() && a.real() == M_E) {
+    printf("\nstd.exp(%s)\n", NumberExpr(b).str().c_str());
+    return std::exp(b);
+  } else {
+    return std::pow(a, b);
+  }
 }
 
 std::unique_ptr<Expr> PowExpr::clone() const {
@@ -292,7 +368,10 @@ EquExpr::EquExpr(std::unique_ptr<Expr>&& left, std::unique_ptr<Expr>&& right)
 Number EquExpr::calculate(const SymbolTable& t) const {
   Number a = left_->calculate(t);
   Number b = right_->calculate(t);
-  return a == b ? 1 : 0;
+  if (a == b)
+    return a;
+  else
+    return Number(std::nan(""), std::nan(""));
 }
 
 std::unique_ptr<Expr> EquExpr::clone() const {
@@ -314,10 +393,10 @@ Number LessExpr::calculate(const SymbolTable& t) const {
   Number a = left_->calculate(t);
   Number b = right_->calculate(t);
 
-  if (!a.imag() && !b.imag())
-    return a.real() < b.real() ? 1 : 0;
+  if (!a.imag() && !b.imag() && a.real() < b.real())
+    return a;
   else
-    return 0;
+    return Number(std::nan(""), std::nan(""));
 }
 
 std::unique_ptr<Expr> LessExpr::clone() const {
@@ -361,6 +440,45 @@ const Symbol& DefineExpr::symbolName() const {
     return e->symbolName();
 
   throw "DefineExpr: no symbol found on left-hand side, but expects one";
+}
+// }}}
+// {{{ SymbolTable
+SymbolTable::SymbolTable() : symbols_(), outerScope_(nullptr) {}
+
+SymbolTable::SymbolTable(const SymbolTable* outerScope)
+    : symbols_(), outerScope_(outerScope) {}
+
+void SymbolTable::defineConstant(const Symbol& name, Number value) {
+  symbols_[name] = std::make_unique<NumberExpr>(value);
+}
+
+void SymbolTable::defineFunction(const Symbol& name, NativeFunction::Impl impl) {
+  symbols_[name] = std::make_unique<NativeFunction>(name, impl);
+}
+
+void SymbolTable::defineFunction(const Symbol& name,
+                                 const CustomFunction::SymbolList& inputs,
+                                 std::unique_ptr<Expr>&& impl) {
+  symbols_[name] = std::make_unique<CustomFunction>(name, inputs, std::move(impl));
+}
+
+const Expr* SymbolTable::lookupSymbol(const Symbol& name) const {
+  auto i = symbols_.find(name);
+  if (i != symbols_.end()) {
+    return i->second.get();
+  } else if (outerScope_) {
+    return outerScope_->lookupSymbol(name);
+  } else {
+    return nullptr;
+  }
+}
+
+Number SymbolTable::getNumber(const Symbol& name) const {
+  if (const Expr* e = lookupSymbol(name))
+    if (auto n = dynamic_cast<const NumberExpr*>(e))
+      return n->getNumber();
+
+  return std::nan("");
 }
 // }}}
 

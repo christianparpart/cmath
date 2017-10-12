@@ -30,15 +30,27 @@ std::string simple(Number n) {
   return s.str();
 }
 
-void declareStandardSymbols(SymbolTable* st) {
-  (*st)["i"] = std::make_unique<NumberExpr>(Number(0, 1));
-  (*st)["e"] = std::make_unique<NumberExpr>(Number(M_E));
-  (*st)[u8"π"] = std::make_unique<NumberExpr>(Number(M_PI));
+void injectStandardSymbols(SymbolTable* st) {
+  st->defineConstant("i", {0, 1});
+  st->defineConstant("e", M_E);
+  st->defineConstant("pi", std::acos(-1));
+  st->defineConstant(u8"π", std::acos(-1));
+
+  st->defineFunction("Re", [](Number x) { return x.real(); });
+  st->defineFunction("Im", [](Number x) { return x.imag(); });
+  st->defineFunction("arg", [](Number x) { return std::atan(x.imag() / x.real()); });
+  st->defineFunction("sin", [](Number x) { return std::sin(x); });
+  st->defineFunction("cos", [](Number x) { return std::cos(x); });
+  st->defineFunction("tan", [](Number x) { return std::tan(x); });
+  st->defineFunction("exp", [](Number x) { return std::exp(x); });
 }
 
 void dumpSymbols(const SymbolTable& symbols) {
   for (const auto& e : symbols)
-    std::cout << e.first << " = " << e.second->str() << std::endl;
+    if (dynamic_cast<const Function*>(e.second.get()))
+      std::cout << e.second->str() << std::endl;
+    else
+      std::cout << e.first << " = " << e.second->str() << std::endl;
 }
 
 void printCommands() {
@@ -53,14 +65,14 @@ void printCommands() {
 int main(int argc, const char* argv[]) {
   try {
     SymbolTable symbols;
-    declareStandardSymbols(&symbols);
+    injectStandardSymbols(&symbols);
     Readline input(".cmathirc");
     input.addHistory(u8"e^(i*π) + 1");
 
     std::cout << "Type ? for help.\n";
 
     for (;;) {
-      auto [eof, line] = input.getline(": ");
+      auto[eof, line] = input.getline(": ");
       if (eof || line == "quit") {
         return 0;
       }
@@ -84,7 +96,7 @@ int main(int argc, const char* argv[]) {
         std::cerr << ec.category().name() << ": " << ec.message() << '\n';
       } else if (const auto d = dynamic_cast<DefineExpr*>(e->get())) {
         std::cout << "define " << d->str() << '\n';
-        symbols[d->symbolName()] = d->right()->clone();
+        symbols.defineConstant(d->symbolName(), d->right()->calculate(symbols));
       } else {
         std::cout << (*e)->str() << " = " << simple((*e)->calculate(symbols)) << '\n';
       }
