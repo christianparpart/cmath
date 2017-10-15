@@ -122,6 +122,8 @@ std::ostream& operator<<(std::ostream& os, Token t) {
       return os << "Define";
     case Token::Equivalence:
       return os << "Equivalence";
+    case Token::Comma:
+      return os << "comma";
   }
 }
 
@@ -214,6 +216,10 @@ bool ExprTokenizer::next() {
       currentChar_++;
       currentToken_.setToken(Token::Equ);
       return true;
+    case ',':
+      currentChar_++;
+      currentToken_.setToken(Token::Comma);
+      return true;
     default:
       break;
   }
@@ -252,10 +258,12 @@ bool ExprTokenizer::next() {
   throw make_error_code(ExprParser::UnexpectedCharacter);
 }
 
-ExprParser::ExprParser(const std::string& e) : ExprParser(toUtf16(e)) {}
+ExprParser::ExprParser(const SymbolTable& symbolTable, const std::string& e)
+    : ExprParser(symbolTable, toUtf16(e)) {}
 
-ExprParser::ExprParser(const std::u16string& e)
-    : expression_(e), currentToken_(expression_.cbegin(), expression_.cend()) {
+ExprParser::ExprParser(const SymbolTable& symbolTable, const std::u16string& e)
+    : symbolTable_(symbolTable), expression_(e),
+      currentToken_(expression_.cbegin(), expression_.cend()) {
   nextToken();
 }
 
@@ -272,12 +280,14 @@ std::ostream& operator<<(std::ostream& os, const ExprTokenizer& t) {
   return os;
 }
 
-Result<std::unique_ptr<Expr>> parseExpression(const std::string& expression) {
-  return ExprParser(expression).parse();
+Result<std::unique_ptr<Expr>> parseExpression(const SymbolTable& symbolTable,
+                                              const std::string& expression) {
+  return ExprParser(symbolTable, expression).parse();
 }
 
-Result<std::unique_ptr<Expr>> parseExpression(const std::u16string& expression) {
-  return ExprParser(expression).parse();
+Result<std::unique_ptr<Expr>> parseExpression(const SymbolTable& symbolTable,
+                                              const std::u16string& expression) {
+  return ExprParser(symbolTable, expression).parse();
 }
 
 Result<std::unique_ptr<Expr>> ExprParser::parse() {
@@ -408,14 +418,40 @@ std::unique_ptr<Expr> ExprParser::primaryExpr() {
       return std::make_unique<NegExpr>(primaryExpr());
     }
     case Token::Number: {
-      auto e = std::make_unique<NumberExpr>(currentToken_->number());
-      nextToken();
-      return e;
+      return std::make_unique<NumberExpr>(consumeNumber());
     }
     case Token::Symbol: {
-      auto e = std::make_unique<SymbolExpr>(currentToken_->symbol());
+      Symbol name = currentToken_->symbol();
       nextToken();
-      return e;
+
+      const Expr* symbol = symbolTable_.lookupSymbol(name);
+      if (symbol == nullptr)
+        throw make_error_code(UnknownSymbol);
+
+      if (const NumberExpr* n = dynamic_cast<const NumberExpr*>(symbol))
+        return std::make_unique<SymbolExpr>(name, n);
+
+      if (const Function* f = dynamic_cast<const Function*>(symbol)) {
+        // parse ['^' primaryExpr ] ('(' expr (',' expr)* ')'
+        //                          |    expr (',' expr)* )
+        std::unique_ptr<Expr> power;
+        if (tryConsumeToken(Token::Pow))
+          power = primaryExpr();
+
+        bool parsedBrackets = tryConsumeToken(Token::RndOpen);
+        std::vector<std::unique_ptr<Expr>> inputs;
+        inputs.emplace_back(expr());
+        while (tryConsumeToken(Token::Comma))
+          inputs.emplace_back(expr());
+
+        if (parsedBrackets)
+          consumeToken(Token::RndClose);
+
+        // TODO: create call node: {f, inputs}^power
+        return std::make_unique<CallExpr>(f, std::move(inputs));
+      }
+
+      throw make_error_code(UnexpectedToken);
     }
     default:
       throw make_error_code(UnexpectedToken);
@@ -427,6 +463,23 @@ void ExprParser::consumeToken(Token t) {
     throw make_error_code(UnexpectedToken);
 
   nextToken();
+}
+
+bool ExprParser::tryConsumeToken(Token t) {
+  if (currentToken() != t)
+    return false;
+
+  nextToken();
+  return true;
+}
+
+Number ExprParser::consumeNumber() {
+  if (currentToken() != Token::Number)
+    throw make_error_code(UnexpectedToken);
+
+  Number n = currentToken_->number();
+  nextToken();
+  return n;
 }
 
 Token ExprParser::currentToken() {
@@ -458,6 +511,8 @@ std::string ExprParser::ErrorCategory::message(int ec) const {
       return "Unexpected token";
     case UnexpectedEof:
       return "Unexpected end of expression";
+    case UnknownSymbol:
+      return "Unknown symbol";
   }
 }
 

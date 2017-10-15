@@ -15,6 +15,8 @@
 
 namespace cmath {
 
+class SymbolTable;
+
 enum class Token {  // {{{
   Eof,              // <artificial delimiter>
   Number,           // 1234, -5
@@ -35,6 +37,7 @@ enum class Token {  // {{{
   RndClose,         // )
   Define,           // :=
   Equivalence,      // <=>
+  Comma,            // ,
 };                  // }}}
 
 std::ostream& operator<<(std::ostream& os, Token t);
@@ -96,28 +99,31 @@ class ExprTokenizer {
   ExprToken currentToken_;
 };
 
-Result<std::unique_ptr<Expr>> parseExpression(const std::string& expression);
-Result<std::unique_ptr<Expr>> parseExpression(const std::u16string& expression);
+Result<std::unique_ptr<Expr>> parseExpression(const SymbolTable& st,
+                                              const std::string& expression);
+
+Result<std::unique_ptr<Expr>> parseExpression(const SymbolTable& st,
+                                              const std::u16string& expression);
 
 class ExprParser {
  public:
-  explicit ExprParser(const std::string& expression);
-  explicit ExprParser(const std::u16string& expression);
+  ExprParser(const SymbolTable& symbolTable, const std::string& expression);
+  ExprParser(const SymbolTable& symbolTable, const std::u16string& expression);
 
   Result<std::unique_ptr<Expr>> parse();
 
-  enum ErrorCode { UnexpectedCharacter, UnexpectedToken, UnexpectedEof };
+  enum ErrorCode { UnexpectedCharacter, UnexpectedToken, UnexpectedEof, UnknownSymbol };
   class ErrorCategory;
 
-  ExprTokenizer begin() {
-    return ExprTokenizer(expression_.cbegin(), expression_.cend());
-  }
+  ExprTokenizer begin() { return ExprTokenizer(expression_.begin(), expression_.end()); }
   ExprTokenizer end() { return ExprTokenizer(expression_.cend(), expression_.cend()); }
 
  private:
   Token nextToken();
   Token currentToken();
   void consumeToken(Token t);
+  bool tryConsumeToken(Token t);
+  Number consumeNumber();
 
   std::unique_ptr<Expr> expr();
   std::unique_ptr<Expr> relExpr();      // < > = != <= >=
@@ -128,6 +134,7 @@ class ExprParser {
   std::unique_ptr<Expr> primaryExpr();  // number symbol ( ! -
 
  private:
+  const SymbolTable& symbolTable_;
   std::u16string expression_;
   ExprTokenizer currentToken_;
 };

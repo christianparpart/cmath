@@ -51,10 +51,28 @@ class Function : public Expr {
 
   explicit Function(const Symbol& name) : Expr(Precedence::Number), name_(name) {}
 
-  virtual Number call(const SymbolTable& t, const NumberList& inputs) = 0;
+  virtual Number call(const SymbolTable& t, const NumberList& inputs) const = 0;
+
+  const std::string& name() const { return name_; }
 
  protected:
   std::string name_;
+};
+
+class CallExpr : public Expr {
+ public:
+  using ParamList = std::vector<std::unique_ptr<Expr>>;
+
+  CallExpr(const Function* f, ParamList&& inputs);
+
+  Number calculate(const SymbolTable& t) const override;
+  std::string str() const override;
+  std::unique_ptr<Expr> clone() const override;
+  bool compare(const Expr* other) const override;
+
+ private:
+  const Function* function_;
+  ParamList inputs_;
 };
 
 class NativeFunction : public Function {
@@ -63,7 +81,7 @@ class NativeFunction : public Function {
 
   NativeFunction(const Symbol& name, Impl impl);
 
-  Number call(const SymbolTable& t, const NumberList& inputs) override;
+  Number call(const SymbolTable& t, const NumberList& inputs) const override;
   Number calculate(const SymbolTable& t) const override;
   std::string str() const override;
   std::unique_ptr<Expr> clone() const override;
@@ -81,7 +99,7 @@ class CustomFunction : public Function {
                  const SymbolList& inputs,
                  std::unique_ptr<Expr>&& expression);
 
-  Number call(const SymbolTable& t, const NumberList& inputs) override;
+  Number call(const SymbolTable& t, const NumberList& inputs) const override;
   Number calculate(const SymbolTable& t) const override;
   std::string str() const override;
   std::unique_ptr<Expr> clone() const override;
@@ -178,7 +196,7 @@ class NegExpr : public Expr {
 
 class SymbolExpr : public Expr {
  public:
-  explicit SymbolExpr(const Symbol& n);
+  SymbolExpr(const Symbol& n, const Expr* def);
 
   const Symbol& symbolName() const noexcept { return symbol_; }
 
@@ -189,6 +207,7 @@ class SymbolExpr : public Expr {
 
  private:
   Symbol symbol_;
+  const Expr* def_;
 };
 
 class BinaryExpr : public Expr {

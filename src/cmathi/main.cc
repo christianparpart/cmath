@@ -38,15 +38,17 @@ void injectStandardSymbols(SymbolTable* st) {
 
   st->defineFunction("Re", [](Number x) { return x.real(); });
   st->defineFunction("Im", [](Number x) { return x.imag(); });
-  st->defineFunction("arg", [](Number x) { return std::atan(x.imag() / x.real()); });
+  st->defineFunction("arg", [](Number x) { return std::atan(x.imag() / x.real()); }); // TODO: FIXME
   st->defineFunction("sin", [](Number x) { return std::sin(x); });
   st->defineFunction("cos", [](Number x) { return std::cos(x); });
   st->defineFunction("tan", [](Number x) { return std::tan(x); });
   st->defineFunction("exp", [](Number x) { return std::exp(x); });
+  st->defineFunction("sqrt", [](Number x) { return std::sqrt(x); });
+  st->defineFunction("log", [](Number x) { return std::log(x); });
 }
 
-void dumpSymbols(const SymbolTable& symbols) {
-  for (const auto& e : symbols)
+void dumpSymbols(const SymbolTable& symbolTable) {
+  for (const auto& e : symbolTable)
     if (dynamic_cast<const Function*>(e.second.get()))
       std::cout << e.second->str() << std::endl;
     else
@@ -64,8 +66,8 @@ void printCommands() {
 
 int main(int argc, const char* argv[]) {
   try {
-    SymbolTable symbols;
-    injectStandardSymbols(&symbols);
+    SymbolTable symbolTable;
+    injectStandardSymbols(&symbolTable);
     Readline input(".cmathirc");
     input.addHistory(u8"e^(i*π) + 1");
 
@@ -81,7 +83,7 @@ int main(int argc, const char* argv[]) {
         continue;
 
       if (line == "vars") {
-        dumpSymbols(symbols);
+        dumpSymbols(symbolTable);
         continue;
       }
 
@@ -90,15 +92,15 @@ int main(int argc, const char* argv[]) {
         continue;
       }
 
-      Result<std::unique_ptr<Expr>> e = parseExpression(line);
+      Result<std::unique_ptr<Expr>> e = parseExpression(symbolTable, line);
       if (e.error()) {
         std::error_code ec = e.error();
         std::cerr << ec.category().name() << ": " << ec.message() << '\n';
       } else if (const auto d = dynamic_cast<DefineExpr*>(e->get())) {
         std::cout << "define " << d->str() << '\n';
-        symbols.defineConstant(d->symbolName(), d->right()->calculate(symbols));
+        symbolTable.defineConstant(d->symbolName(), d->right()->calculate(symbolTable));
       } else {
-        std::cout << (*e)->str() << " = " << simple((*e)->calculate(symbols)) << '\n';
+        std::cout << (*e)->str() << " = " << simple((*e)->calculate(symbolTable)) << '\n';
       }
     }
 
