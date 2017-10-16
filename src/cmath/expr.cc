@@ -382,11 +382,22 @@ SymbolTable::SymbolTable(const SymbolTable* outerScope)
     : symbols_(), outerScope_(outerScope) {}
 
 void SymbolTable::defineConstant(const Symbol& name, Number value) {
-  symbols_[name] = std::make_unique<ConstantDef>(value);
+  auto def = symbols_.find(name);
+  if (def == symbols_.end()) {
+    symbols_[name] = std::make_unique<ConstantDef>(value);
+  } else if (auto n = dynamic_cast<ConstantDef*>(def->second.get())) {
+    n->redefine(value);
+  } else {
+    throw "Type mismatch in redefinition of symbol '" + name + "'.";
+  }
 }
 
 void SymbolTable::defineFunction(const Symbol& name, NativeFunctionDef::Impl impl) {
   symbols_[name] = std::make_unique<NativeFunctionDef>(impl);
+}
+
+void SymbolTable::defineFunction(const Symbol& name, NativeFunction2Def::Impl impl) {
+  symbols_[name] = std::make_unique<NativeFunction2Def>(impl);
 }
 
 void SymbolTable::defineFunction(const Symbol& name,
@@ -476,11 +487,22 @@ std::string ConstantDef::str() const {
 NativeFunctionDef::NativeFunctionDef(Impl impl) : impl_(impl) {}
 
 Number NativeFunctionDef::call(const SymbolTable& t, const NumberList& input) const {
-  return impl_(input[0]);
+    return impl_(input[0]);
 }
 
 std::string NativeFunctionDef::str() const {
   return "(x) -> native";
+}
+// }}}
+// {{{ NativeFunction2Def
+NativeFunction2Def::NativeFunction2Def(Impl impl) : impl_(impl) {}
+
+Number NativeFunction2Def::call(const SymbolTable& t, const NumberList& input) const {
+    return impl_(input[0], input[1]);
+}
+
+std::string NativeFunction2Def::str() const {
+  return "(x1, x2) -> native";
 }
 // }}}
 // {{{ CustomFunctionDef

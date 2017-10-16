@@ -426,7 +426,7 @@ std::unique_ptr<Expr> ExprParser::primaryExpr() {
 
       const Def* def = symbolTable_.lookup(name);
       if (def == nullptr)
-        throw make_error_code(UnknownSymbol);
+        return std::make_unique<SymbolExpr>(name, nullptr);
 
       if (const ConstantDef* n = dynamic_cast<const ConstantDef*>(def))
         return std::make_unique<SymbolExpr>(name, n);
@@ -448,7 +448,12 @@ std::unique_ptr<Expr> ExprParser::primaryExpr() {
           consumeToken(Token::RndClose);
 
         // TODO: create call node: {f, inputs}^power
-        return std::make_unique<CallExpr>(name, f, std::move(inputs));
+        if (power) {
+          return std::make_unique<PowExpr>(
+              std::make_unique<CallExpr>(name, f, std::move(inputs)), std::move(power));
+        } else {
+          return std::make_unique<CallExpr>(name, f, std::move(inputs));
+        }
       }
 
       throw make_error_code(UnexpectedToken);

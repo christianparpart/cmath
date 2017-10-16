@@ -236,6 +236,8 @@ class ConstantDef : public Def {
 
   Number getNumber() const { return number_; }
 
+  void redefine(Number n) { number_ = n; }
+
   std::string str() const override;
 
  private:
@@ -254,6 +256,19 @@ class NativeFunctionDef : public FunctionDef {
   using Impl = std::function<Number(Number)>;
 
   explicit NativeFunctionDef(Impl impl);
+
+  Number call(const SymbolTable& t, const NumberList& inputs) const override;
+  std::string str() const override;
+
+ private:
+  Impl impl_;
+};
+
+class NativeFunction2Def : public FunctionDef {
+ public:
+  using Impl = std::function<Number(Number, Number)>;
+
+  explicit NativeFunction2Def(Impl impl);
 
   Number call(const SymbolTable& t, const NumberList& inputs) const override;
   std::string str() const override;
@@ -283,6 +298,7 @@ class SymbolTable {
 
   void defineConstant(const Symbol& name, Number value);
   void defineFunction(const Symbol& name, NativeFunctionDef::Impl impl);
+  void defineFunction(const Symbol& name, NativeFunction2Def::Impl impl);
   void defineFunction(const Symbol& name,
                       const CustomFunctionDef::SymbolList& inputs,
                       std::unique_ptr<Expr>&& impl);
