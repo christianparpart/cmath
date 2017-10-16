@@ -49,10 +49,7 @@ void injectStandardSymbols(SymbolTable* st) {
 
 void dumpSymbols(const SymbolTable& symbolTable) {
   for (const auto& e : symbolTable)
-    if (dynamic_cast<const Function*>(e.second.get()))
-      std::cout << e.second->str() << std::endl;
-    else
-      std::cout << e.first << " = " << e.second->str() << std::endl;
+    std::cout << e.first << " = " << e.second->str() << std::endl;
 }
 
 void printCommands() {

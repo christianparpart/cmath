@@ -26,7 +26,7 @@ enum class Precedence {
   Addition,        // + -
   Multiplication,  // * / !
   Power,           // ^
-  Number,          // 42 x a b
+  Primary,         // 42 x a b
 };
 
 class Expr {
@@ -43,106 +43,6 @@ class Expr {
 
  protected:
   Precedence precedence_;
-};
-
-class Function : public Expr {
- public:
-  using NumberList = std::vector<Number>;
-
-  explicit Function(const Symbol& name) : Expr(Precedence::Number), name_(name) {}
-
-  virtual Number call(const SymbolTable& t, const NumberList& inputs) const = 0;
-
-  const std::string& name() const { return name_; }
-
- protected:
-  std::string name_;
-};
-
-class CallExpr : public Expr {
- public:
-  using ParamList = std::vector<std::unique_ptr<Expr>>;
-
-  CallExpr(const Function* f, ParamList&& inputs);
-
-  Number calculate(const SymbolTable& t) const override;
-  std::string str() const override;
-  std::unique_ptr<Expr> clone() const override;
-  bool compare(const Expr* other) const override;
-
- private:
-  const Function* function_;
-  ParamList inputs_;
-};
-
-class NativeFunction : public Function {
- public:
-  using Impl = std::function<Number(Number)>;
-
-  NativeFunction(const Symbol& name, Impl impl);
-
-  Number call(const SymbolTable& t, const NumberList& inputs) const override;
-  Number calculate(const SymbolTable& t) const override;
-  std::string str() const override;
-  std::unique_ptr<Expr> clone() const override;
-  bool compare(const Expr* other) const override;
-
- private:
-  Impl impl_;
-};
-
-class CustomFunction : public Function {
- public:
-  using SymbolList = std::vector<Symbol>;
-
-  CustomFunction(const Symbol& name,
-                 const SymbolList& inputs,
-                 std::unique_ptr<Expr>&& expression);
-
-  Number call(const SymbolTable& t, const NumberList& inputs) const override;
-  Number calculate(const SymbolTable& t) const override;
-  std::string str() const override;
-  std::unique_ptr<Expr> clone() const override;
-  bool compare(const Expr* other) const override;
-
- private:
-  std::string name_;
-  SymbolList inputs_;
-  std::unique_ptr<Expr> expr_;
-};
-
-class SymbolTable {
- public:
-  SymbolTable();
-  explicit SymbolTable(const SymbolTable* outerScope);
-
-  void defineConstant(const Symbol& name, Number value);
-  void defineFunction(const Symbol& name, NativeFunction::Impl impl);
-  void defineFunction(const Symbol& name,
-                      const CustomFunction::SymbolList& inputs,
-                      std::unique_ptr<Expr>&& impl);
-
-  const Expr* lookupSymbol(const Symbol& name) const;
-  const Function* lookupFunction(const Symbol& name) const;
-
-  Number getNumber(const Symbol& name) const;
-
-  using Map = std::map<Symbol, std::unique_ptr<Expr>>;
-  using iterator = Map::iterator;
-  using const_iterator = Map::const_iterator;
-
-  iterator begin() { return symbols_.begin(); }
-  iterator end() { return symbols_.end(); }
-
-  const_iterator begin() const { return symbols_.cbegin(); }
-  const_iterator end() const { return symbols_.cend(); }
-
-  const_iterator cbegin() const { return symbols_.cbegin(); }
-  const_iterator cend() const { return symbols_.cend(); }
-
- private:
-  Map symbols_;
-  const SymbolTable* outerScope_;
 };
 
 class NumberExpr : public Expr {
@@ -194,9 +94,10 @@ class NegExpr : public Expr {
   std::unique_ptr<Expr> subExpr_;
 };
 
+class ConstantDef;
 class SymbolExpr : public Expr {
  public:
-  SymbolExpr(const Symbol& n, const Expr* def);
+  SymbolExpr(const Symbol& n, const ConstantDef* def);
 
   const Symbol& symbolName() const noexcept { return symbol_; }
 
@@ -207,7 +108,7 @@ class SymbolExpr : public Expr {
 
  private:
   Symbol symbol_;
-  const Expr* def_;
+  const ConstantDef* def_;
 };
 
 class BinaryExpr : public Expr {
@@ -301,6 +202,111 @@ class DefineExpr : public BinaryExpr {
   Number calculate(const SymbolTable& t) const override;
   std::unique_ptr<Expr> clone() const override;
   bool compare(const Expr* other) const override;
+};
+
+class FunctionDef;
+
+class CallExpr : public Expr {
+ public:
+  using ParamList = std::vector<std::unique_ptr<Expr>>;
+
+  CallExpr(const std::string& symbolName, const FunctionDef* f, ParamList&& inputs);
+
+  Number calculate(const SymbolTable& t) const override;
+  std::string str() const override;
+  std::unique_ptr<Expr> clone() const override;
+  bool compare(const Expr* other) const override;
+
+ private:
+  std::string symbolName_;
+  const FunctionDef* function_;
+  ParamList inputs_;
+};
+
+class Def {
+ public:
+  virtual ~Def() {}
+
+  virtual std::string str() const = 0;
+};
+
+class ConstantDef : public Def {
+ public:
+  explicit ConstantDef(Number value);
+
+  Number getNumber() const { return number_; }
+
+  std::string str() const override;
+
+ private:
+  Number number_;
+};
+
+class FunctionDef : public Def {
+ public:
+  using NumberList = std::vector<Number>;
+
+  virtual Number call(const SymbolTable& t, const NumberList& inputs) const = 0;
+};
+
+class NativeFunctionDef : public FunctionDef {
+ public:
+  using Impl = std::function<Number(Number)>;
+
+  explicit NativeFunctionDef(Impl impl);
+
+  Number call(const SymbolTable& t, const NumberList& inputs) const override;
+  std::string str() const override;
+
+ private:
+  Impl impl_;
+};
+
+class CustomFunctionDef : public FunctionDef {
+ public:
+  using SymbolList = std::vector<Symbol>;
+
+  CustomFunctionDef(const SymbolList& inputs, std::unique_ptr<Expr>&& expression);
+
+  Number call(const SymbolTable& t, const NumberList& inputs) const override;
+  std::string str() const override;
+
+ private:
+  SymbolList inputs_;
+  std::unique_ptr<Expr> expr_;
+};
+
+class SymbolTable {
+ public:
+  SymbolTable();
+  explicit SymbolTable(const SymbolTable* outerScope);
+
+  void defineConstant(const Symbol& name, Number value);
+  void defineFunction(const Symbol& name, NativeFunctionDef::Impl impl);
+  void defineFunction(const Symbol& name,
+                      const CustomFunctionDef::SymbolList& inputs,
+                      std::unique_ptr<Expr>&& impl);
+
+  const Def* lookup(const Symbol& name) const;
+
+  Number getNumber(const Symbol& name) const;
+
+  using Map = std::map<Symbol, std::unique_ptr<Def>>;
+  using iterator = Map::iterator;
+  using const_iterator = Map::const_iterator;
+
+  iterator begin() { return symbols_.begin(); }
+  iterator end() { return symbols_.end(); }
+
+  const_iterator begin() const { return symbols_.cbegin(); }
+  const_iterator end() const { return symbols_.cend(); }
+
+  const_iterator cbegin() const { return symbols_.cbegin(); }
+  const_iterator cend() const { return symbols_.cend(); }
+
+ private:
+  Map symbols_;
+  const SymbolTable* outerScope_;
 };
 
 std::ostream& operator<<(std::ostream& os, const Expr* expr);

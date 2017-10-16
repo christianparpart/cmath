@@ -26,7 +26,7 @@ std::ostream& operator<<(std::ostream& os, const Expr& expr) {
 Expr::Expr(Precedence p) : precedence_(p) {}
 // }}}
 // {{{ NumberExpr
-NumberExpr::NumberExpr(Number n) : Expr(Precedence::Number), literal_(n) {}
+NumberExpr::NumberExpr(Number n) : Expr(Precedence::Primary), literal_(n) {}
 
 std::string NumberExpr::str() const {
   std::stringstream s;
@@ -60,129 +60,9 @@ bool NumberExpr::compare(const Expr* other) const {
   return false;
 }
 // }}}
-// {{{ CallExpr
-CallExpr::CallExpr(const Function* f, ParamList&& inputs)
-    : Expr(Precedence::Number), function_(f), inputs_(std::move(inputs)) {}
-
-Number CallExpr::calculate(const SymbolTable& t) const {
-  Function::NumberList args;
-  args.resize(inputs_.size());
-  for (size_t i = 0, e = inputs_.size(); i != e; ++i)
-    args[i] = inputs_[i]->calculate(t);
-
-  return function_->call(t, args);
-}
-
-std::string CallExpr::str() const {
-  std::stringstream s;
-  s << function_->name() << '(';
-  for (size_t i = 0, e = inputs_.size(); i != e; ++i) {
-    if (i) s << ", ";
-    s << inputs_[i]->str();
-  }
-  s << ')';
-  return s.str();
-}
-
-std::unique_ptr<Expr> CallExpr::clone() const {
-  ParamList args;
-  args.resize(inputs_.size());
-  for (int i = 0, e = inputs_.size(); i != e; ++i)
-    args[i] = inputs_[i]->clone();
-
-  return std::make_unique<CallExpr>(function_, std::move(args));
-}
-
-bool CallExpr::compare(const Expr* other) const {
-  if (auto otherCall = dynamic_cast<const CallExpr*>(other)) {
-    if (otherCall->function_ == function_) {
-      for (int i = 0, e = inputs_.size(); i != e; ++i) {
-        if (!inputs_[i]->compare(otherCall->inputs_[i].get())) {
-          return false;
-        }
-      }
-      return true;
-    }
-  }
-  return false;
-}
-// }}}
-// {{{ NativeFunction
-NativeFunction::NativeFunction(const Symbol& name, Impl impl)
-    : Function(name), impl_(impl) {}
-
-Number NativeFunction::call(const SymbolTable& t, const NumberList& input) const {
-  SymbolTable st(&t);
-  st.defineConstant("x", input[0]);
-  return calculate(st);
-}
-
-Number NativeFunction::calculate(const SymbolTable& t) const {
-  return impl_(t.getNumber("x"));
-}
-
-std::string NativeFunction::str() const {
-  return name_ + "(x) = native";
-}
-
-std::unique_ptr<Expr> NativeFunction::clone() const {
-  return std::make_unique<NativeFunction>(name_, impl_);
-}
-
-bool NativeFunction::compare(const Expr* other) const {
-  if (auto e = dynamic_cast<const NativeFunction*>(other))
-    return e->name_ == name_;  // XXX we only check the name
-
-  return false;
-}
-// }}}
-// {{{ CustomFunction
-CustomFunction::CustomFunction(const Symbol& name,
-                               const SymbolList& inputs,
-                               std::unique_ptr<Expr>&& expr)
-    : Function(name), inputs_(inputs), expr_(std::move(expr)) {}
-
-Number CustomFunction::call(const SymbolTable& t, const NumberList& inputs) const {
-  SymbolTable st(&t);
-
-  for (size_t i = 0, e = inputs_.size(); i != e; ++i)
-    st.defineConstant(inputs_[i], inputs[i]);
-
-  return calculate(st);
-}
-
-Number CustomFunction::calculate(const SymbolTable& t) const {
-  return expr_->calculate(t);
-}
-
-std::string CustomFunction::str() const {
-  std::stringstream s;
-
-  s << name_ << "(";
-  for (size_t i = 0, e = inputs_.size(); i != e; ++i) {
-    if (i)
-      s << ", ";
-    s << inputs_[i];
-  }
-  s << ") = " << expr_->str();
-
-  return s.str();
-}
-
-std::unique_ptr<Expr> CustomFunction::clone() const {
-  return std::make_unique<CustomFunction>(name_, inputs_, expr_->clone());
-}
-
-bool CustomFunction::compare(const Expr* other) const {
-  if (auto e = dynamic_cast<const CustomFunction*>(other))
-    return e->name_ == name_;  // XXX we only check the name
-
-  return false;
-}
-// }}}
 // {{{ NegExpr
 NegExpr::NegExpr(std::unique_ptr<Expr>&& e)
-    : Expr(Precedence::Number), subExpr_(std::move(e)) {}
+    : Expr(Precedence::Primary), subExpr_(std::move(e)) {}
 
 std::string NegExpr::str() const {
   std::stringstream s;
@@ -214,8 +94,8 @@ bool NegExpr::compare(const Expr* other) const {
 }
 // }}}
 // {{{ SymbolExpr
-SymbolExpr::SymbolExpr(const Symbol& s, const Expr* def)
-    : Expr(Precedence::Number), symbol_(s), def_(def) {}
+SymbolExpr::SymbolExpr(const Symbol& s, const ConstantDef* def)
+    : Expr(Precedence::Primary), symbol_(s), def_(def) {}
 
 std::string SymbolExpr::str() const {
   std::stringstream s;
@@ -224,15 +104,17 @@ std::string SymbolExpr::str() const {
 }
 
 Number SymbolExpr::calculate(const SymbolTable& t) const {
-  if (!def_) {
-    auto i = t.lookupSymbol(symbol_);
-    if (!i)
-      return std::nan("");
+  if (def_)
+    return def_->getNumber();
 
-    const_cast<SymbolExpr*>(this)->def_ = i;
+  if (const Def* d = t.lookup(symbol_)) {
+    if (auto i = dynamic_cast<const ConstantDef*>(d)) {
+      const_cast<SymbolExpr*>(this)->def_ = i;
+      return i->getNumber();
+    }
   }
 
-  return def_->calculate(t);
+  return std::nan("");
 }
 
 std::unique_ptr<Expr> SymbolExpr::clone() const {
@@ -349,7 +231,7 @@ bool DivExpr::compare(const Expr* other) const {
 // }}}
 // {{{ FacExpr
 FacExpr::FacExpr(std::unique_ptr<Expr>&& subExpr)
-    : UnaryExpr(Precedence::Number, std::move(subExpr)) {}
+    : UnaryExpr(Precedence::Primary, std::move(subExpr)) {}
 
 std::string FacExpr::str() const {
   std::stringstream s;
@@ -500,36 +382,141 @@ SymbolTable::SymbolTable(const SymbolTable* outerScope)
     : symbols_(), outerScope_(outerScope) {}
 
 void SymbolTable::defineConstant(const Symbol& name, Number value) {
-  symbols_[name] = std::make_unique<NumberExpr>(value);
+  symbols_[name] = std::make_unique<ConstantDef>(value);
 }
 
-void SymbolTable::defineFunction(const Symbol& name, NativeFunction::Impl impl) {
-  symbols_[name] = std::make_unique<NativeFunction>(name, impl);
+void SymbolTable::defineFunction(const Symbol& name, NativeFunctionDef::Impl impl) {
+  symbols_[name] = std::make_unique<NativeFunctionDef>(impl);
 }
 
 void SymbolTable::defineFunction(const Symbol& name,
-                                 const CustomFunction::SymbolList& inputs,
+                                 const CustomFunctionDef::SymbolList& inputs,
                                  std::unique_ptr<Expr>&& impl) {
-  symbols_[name] = std::make_unique<CustomFunction>(name, inputs, std::move(impl));
+  symbols_[name] = std::make_unique<CustomFunctionDef>(inputs, std::move(impl));
 }
 
-const Expr* SymbolTable::lookupSymbol(const Symbol& name) const {
+const Def* SymbolTable::lookup(const Symbol& name) const {
   auto i = symbols_.find(name);
   if (i != symbols_.end()) {
     return i->second.get();
   } else if (outerScope_) {
-    return outerScope_->lookupSymbol(name);
+    return outerScope_->lookup(name);
   } else {
     return nullptr;
   }
 }
 
 Number SymbolTable::getNumber(const Symbol& name) const {
-  if (const Expr* e = lookupSymbol(name))
-    if (auto n = dynamic_cast<const NumberExpr*>(e))
+  if (const Def* d = lookup(name))
+    if (auto n = dynamic_cast<const ConstantDef*>(d))
       return n->getNumber();
 
   return std::nan("");
+}
+// }}}
+// {{{ CallExpr
+CallExpr::CallExpr(const std::string& name, const FunctionDef* f, ParamList&& inputs)
+    : Expr(Precedence::Primary), symbolName_(name), function_(f),
+      inputs_(std::move(inputs)) {}
+
+Number CallExpr::calculate(const SymbolTable& t) const {
+  FunctionDef::NumberList args;
+  args.resize(inputs_.size());
+  for (size_t i = 0, e = inputs_.size(); i != e; ++i)
+    args[i] = inputs_[i]->calculate(t);
+
+  return function_->call(t, args);
+}
+
+std::string CallExpr::str() const {
+  std::stringstream s;
+  s << symbolName_ << '(';
+  for (size_t i = 0, e = inputs_.size(); i != e; ++i) {
+    if (i)
+      s << ", ";
+    s << inputs_[i]->str();
+  }
+  s << ')';
+  return s.str();
+}
+
+std::unique_ptr<Expr> CallExpr::clone() const {
+  ParamList args;
+  args.resize(inputs_.size());
+  for (int i = 0, e = inputs_.size(); i != e; ++i)
+    args[i] = inputs_[i]->clone();
+
+  return std::make_unique<CallExpr>(symbolName_, function_, std::move(args));
+}
+
+bool CallExpr::compare(const Expr* other) const {
+  if (auto otherCall = dynamic_cast<const CallExpr*>(other)) {
+    if (otherCall->function_ == function_) {
+      for (int i = 0, e = inputs_.size(); i != e; ++i) {
+        if (!inputs_[i]->compare(otherCall->inputs_[i].get())) {
+          return false;
+        }
+      }
+      return true;
+    }
+  }
+  return false;
+}
+// }}}
+// {{{ ConstantDef
+ConstantDef::ConstantDef(Number value) : number_(value) {}
+
+std::string ConstantDef::str() const {
+  std::stringstream s;
+  if (!number_.imag()) {
+    s << number_.real();
+  } else {
+    s << "(" << number_.real() << " + ";
+    if (number_.imag() != 1) {
+      s << number_.imag();
+    }
+    s << "i)";
+  }
+  return s.str();
+}
+// }}}
+// {{{ NativeFunctionDef
+NativeFunctionDef::NativeFunctionDef(Impl impl) : impl_(impl) {}
+
+Number NativeFunctionDef::call(const SymbolTable& t, const NumberList& input) const {
+  return impl_(input[0]);
+}
+
+std::string NativeFunctionDef::str() const {
+  return "(x) -> native";
+}
+// }}}
+// {{{ CustomFunctionDef
+CustomFunctionDef::CustomFunctionDef(const SymbolList& inputs,
+                                     std::unique_ptr<Expr>&& expr)
+    : inputs_(inputs), expr_(std::move(expr)) {}
+
+Number CustomFunctionDef::call(const SymbolTable& t, const NumberList& inputs) const {
+  SymbolTable st(&t);
+
+  for (size_t i = 0, e = inputs_.size(); i != e; ++i)
+    st.defineConstant(inputs_[i], inputs[i]);
+
+  return expr_->calculate(t);
+}
+
+std::string CustomFunctionDef::str() const {
+  std::stringstream s;
+
+  s << "(";
+  for (size_t i = 0, e = inputs_.size(); i != e; ++i) {
+    if (i)
+      s << ", ";
+    s << inputs_[i];
+  }
+  s << ") = " << expr_->str();
+
+  return s.str();
 }
 // }}}
 
