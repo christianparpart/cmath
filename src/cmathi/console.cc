@@ -10,12 +10,14 @@
 #include <readline/readline.h>
 #include <stdio.h>
 
-Readline::Readline(const std::string& historyFilename) {
-  // using_history();
+Readline::Readline(const std::string& historyFilename) : histfile_(historyFilename) {
+  history_write_timestamps = 1;
+  using_history();
+  read_history(historyFilename.c_str());
 }
 
 Readline::~Readline() {
-  //.
+  write_history(histfile_.c_str());
 }
 
 std::tuple<bool, std::string> Readline::getline(const char* prompt) {
@@ -33,7 +35,10 @@ void Readline::addHistory(const std::string& line) {
   if (line.empty())
     return;
 
-  // TODO: ensure we don't have duplicates, but this item is the most recent
-
-  add_history(line.c_str());
+  int which = history_search_pos(line.c_str(), 1, 0);
+  if (which < 0) {
+    add_history(line.c_str());
+  } else {
+    add_history_time(line.c_str());
+  }
 }

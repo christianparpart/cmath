@@ -25,4 +25,7 @@ class Readline : public ConsoleReader {
 
   std::tuple<bool, std::string> getline(const char* prompt) override;
   void addHistory(const std::string& line) override;
+
+ private:
+  std::string histfile_;
 };
