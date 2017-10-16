@@ -289,8 +289,6 @@ class SymbolTable {
 
   const Def* lookup(const Symbol& name) const;
 
-  Number getNumber(const Symbol& name) const;
-
   using Map = std::map<Symbol, std::unique_ptr<Def>>;
   using iterator = Map::iterator;
   using const_iterator = Map::const_iterator;

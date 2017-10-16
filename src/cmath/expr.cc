@@ -405,14 +405,6 @@ const Def* SymbolTable::lookup(const Symbol& name) const {
     return nullptr;
   }
 }
-
-Number SymbolTable::getNumber(const Symbol& name) const {
-  if (const Def* d = lookup(name))
-    if (auto n = dynamic_cast<const ConstantDef*>(d))
-      return n->getNumber();
-
-  return std::nan("");
-}
 // }}}
 // {{{ CallExpr
 CallExpr::CallExpr(const std::string& name, const FunctionDef* f, ParamList&& inputs)
