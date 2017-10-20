@@ -6,12 +6,19 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include "console.h"
-#include <readline/history.h>
-#include <readline/readline.h>
+#include <cmath/sysconfig.h>
 #include <stdio.h>
 
+#if HAVE_EDITLINE_READLINE_H
+#warning editline used
+#include <editline/readline.h>
+#else
+#warning readline used
+#include <readline/history.h>
+#include <readline/readline.h>
+#endif
+
 Readline::Readline(const std::string& historyFilename) : histfile_(historyFilename) {
-  history_write_timestamps = 1;
   using_history();
   read_history(historyFilename.c_str());
 }
@@ -35,10 +42,16 @@ void Readline::addHistory(const std::string& line) {
   if (line.empty())
     return;
 
-  int which = history_search_pos(line.c_str(), 1, 0);
-  if (which < 0) {
+  // TODO: only add items that aren't in there yet
+  int which = history_search_prefix(line.c_str(), 0);
+  if (which >= 0) {
+    // HIST_ENTRY* entry = history_get(which);
+    // if (entry) {
+    //   printf("  line: %s\n", entry->line);
+    // } else {
+    //   printf("history_get(%d) = NULL\n", which);
+    // }
+  } else {  // if (which < 0) {
     add_history(line.c_str());
-  } else {
-    add_history_time(line.c_str());
   }
 }

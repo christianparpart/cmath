@@ -27,15 +27,21 @@ AM_CONDITIONAL([PLATFORM_WSL], [uname -r | grep -q Microsoft])
 
 AC_HEADER_STDC
 
+AC_CHECK_HEADERS([editline/readline.h], [have_editline=yes])
+AM_CONDITIONAL([EDITLINE], [test x$have_editline = xyes])
+
+EDITLINE_LIBS="-ledit"
+AC_SUBST([EDITLINE_LIBS])
+
+READLINE_LIBS="-lreadline"
+AC_SUBST([READLINE_LIBS])
+
 ####### OUTPUT ################################################################
 
 BASE_CXXFLAGS="-DXOPEN_SOURCE=600 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE \
  -D_LARGEFILE_SOURCE -D_LARGE_FILES -Wall -Wextra -std=c++1z \
  -Wno-unused-variable -Wno-unused-parameter"
 AC_SUBST([BASE_CXXFLAGS])
-
-BASE_LIBS="-lreadline"
-AC_SUBST([BASE_LIBS])
 
 BASE_LDFLAGS="-rdynamic"
 AC_SUBST([BASE_LDFLAGS])

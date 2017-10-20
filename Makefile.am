@@ -62,9 +62,14 @@ cmathi_CXXFLAGS = \
 
 cmathi_LDADD = \
 	libcmath.a \
-	$(BASE_LIBS) \
 	$(BASE_LDFLAGS) \
 	$(AM_LDFLAGS)
+
+if EDITLINE
+cmathi_LDADD += $(EDITLINE_LIBS)
+else
+cmathi_LDADD += $(READLINE_LIBS)
+endif
 
 cmathi_SOURCES = \
 	src/cmathi/console.cc \
