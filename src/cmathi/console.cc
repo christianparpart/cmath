@@ -10,10 +10,8 @@
 #include <stdio.h>
 
 #if HAVE_EDITLINE_READLINE_H
-#warning editline used
 #include <editline/readline.h>
 #else
-#warning readline used
 #include <readline/history.h>
 #include <readline/readline.h>
 #endif
