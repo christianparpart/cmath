@@ -12,3 +12,4 @@ Makefile.in
 /missing
 /depcomp
 /src/cmath/sysconfig.h.in
+*~
