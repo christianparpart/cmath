@@ -35,6 +35,7 @@ void injectStandardSymbols(SymbolTable* st) {
   st->defineConstant("e", M_E);
   st->defineConstant("pi", std::acos(-1));
   st->defineConstant(u8"π", std::acos(-1));
+  st->defineConstant("nan", std::nan(""));
 
   st->defineFunction("Re", [](Number x) { return x.real(); });
   st->defineFunction("Im", [](Number x) { return x.imag(); });
@@ -96,8 +97,15 @@ int main(int argc, const char* argv[]) {
         std::error_code ec = e.error();
         std::cerr << ec.category().name() << ": " << ec.message() << '\n';
       } else if (const auto d = dynamic_cast<DefineExpr*>(e->get())) {
-        std::cout << "define " << d->str() << '\n';
-        symbolTable.defineConstant(d->symbolName(), d->right()->calculate(symbolTable));
+        Number value = d->right()->calculate(symbolTable);
+        // check NAN
+        if (!std::isnan(std::abs(value))) {
+          std::cout << "define " << d->str() << '\n';
+          symbolTable.defineConstant(d->symbolName(), value);
+        } else {
+          std::cout << "undefine " << d->str() << '\n';
+          symbolTable.undefine(d->symbolName());
+        }
       } else {
         std::cout << (*e)->str() << " = " << simple((*e)->calculate(symbolTable)) << '\n';
       }

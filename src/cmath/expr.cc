@@ -406,6 +406,13 @@ void SymbolTable::defineFunction(const Symbol& name,
   symbols_[name] = std::make_unique<CustomFunctionDef>(inputs, std::move(impl));
 }
 
+void SymbolTable::undefine(const Symbol& name) {
+  auto def = symbols_.find(name);
+  if (def == symbols_.end()) {
+    symbols_.erase(def);
+  }
+}
+
 const Def* SymbolTable::lookup(const Symbol& name) const {
   auto i = symbols_.find(name);
   if (i != symbols_.end()) {

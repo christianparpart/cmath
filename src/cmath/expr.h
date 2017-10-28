@@ -303,6 +303,8 @@ class SymbolTable {
                       const CustomFunctionDef::SymbolList& inputs,
                       std::unique_ptr<Expr>&& impl);
 
+  void undefine(const Symbol& name);
+
   const Def* lookup(const Symbol& name) const;
 
   using Map = std::map<Symbol, std::unique_ptr<Def>>;

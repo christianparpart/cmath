@@ -124,6 +124,10 @@ std::ostream& operator<<(std::ostream& os, Token t) {
       return os << "Equivalence";
     case Token::Comma:
       return os << "comma";
+    case Token::Colon:
+      return os << ":";
+    case Token::RightArrow:
+      return os << "->";
   }
 }
 
@@ -148,7 +152,12 @@ bool ExprTokenizer::next() {
       return true;
     case '-':
       currentChar_++;
-      currentToken_.setToken(Token::Minus);
+      if (hasBytesPending() && *currentChar_ == '>') {
+        currentChar_++;
+        currentToken_.setToken(Token::RightArrow);
+      } else {
+        currentToken_.setToken(Token::Minus);
+      }
       return true;
     case '*':
       currentChar_++;
@@ -181,7 +190,8 @@ bool ExprTokenizer::next() {
         currentToken_.setToken(Token::Define);
         return true;
       } else {
-        throw make_error_code(ExprParser::UnexpectedCharacter);
+        currentToken_.setToken(Token::Colon);
+        return true;
       }
     case '<':
       // < <> <= <=>

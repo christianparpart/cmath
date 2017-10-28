@@ -38,6 +38,8 @@ enum class Token {  // {{{
   Define,           // :=
   Equivalence,      // <=>
   Comma,            // ,
+  Colon,            // :
+  RightArrow,       // ->
 };                  // }}}
 
 std::ostream& operator<<(std::ostream& os, Token t);
