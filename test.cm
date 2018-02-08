@@ -1,0 +1,66 @@
+# vim:syntax=cm
+
+(* elementary functions *)
+exp: C -> C,
+     x -> sum over x^k/k! for k = 0 to infinity
+
+sin: C -> C,
+     z -> sum over z^(2k+1)/(2k+1)! for k = 0 to infinity
+
+cos: C -> C,
+     z -> sum over z^(2k)/(2k)! for k = 0 to infinity
+
+tan: z -> sin(z) / cos(z)
+
+(* elementary constants *)
+let e = exp(1)
+let i = sqrt(-1)
+let pi = 2 * (solve cos(x) = 0 for x)
+
+# -----------------------------------------------------------------------------
+# core functions
+
+# each: (array, proc <_, _> -> _)
+
+map: (array, mapper) ->
+  each(array) {|i| array[i] = mapper(array[i])}
+
+fold: (array, init, func) ->
+  let y = init
+  each(array) {|b| y = func(y, b)}
+  y
+
+# -----------------------------------------------------------------------------
+# helper
+
+binom: (N, N) -> N
+       (n, k) -> if k = 0 then 1
+                 else if k > n then 0
+                 else n! / (k! * (n-k)!)
+
+fac: N -> N,
+     n -> if n <= 0 then 1
+          else product over k for k = 1 to n
+
+fib: N -> N,
+     1 -> 1,
+     2 -> 2,
+     n -> fib(n-1) * fib(n-2)
+     n -> match
+          case n = 1 then 1
+          case n = 2 then 2
+          else fib(n-1) * fib(n-2)
+
+# -----------------------------------------------------------------------------
+
+each(range(10)) {|_, value| print(value)}
+
+print(numerical(e, 4))
+
+let A = R^2^2 # 2-by-2 matrix of real numbers
+A[1][1] = 1
+A[1][2] = 2
+A[2] = [3, 4]
+
+A*x = B
+
