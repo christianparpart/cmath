@@ -541,4 +541,26 @@ std::string CustomFunctionDef::str() const {
 }
 // }}}
 
+// {{{ CaseExpr
+std::string CaseExpr::str() const {
+  return "CaseExpr()"; // TODO
+}
+
+Number CaseExpr::calculate(const SymbolTable& t) const {
+  for (const auto& c: cases_) {
+    if (c.first->calculate(t) != Number()) {
+      return c.second->calculate(t);
+    }
+  }
+  return elseExpr_->calculate(t);
+}
+
+std::unique_ptr<Expr> CaseExpr::clone() const {
+  return nullptr; // TODO
+}
+
+bool CaseExpr::compare(const Expr* other) const {
+  return false; // TODO
+}
+// }}}
 }  // namespace cmath

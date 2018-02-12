@@ -29,6 +29,10 @@ enum class Precedence {
   Primary,         // 42 x a b
 };
 
+// TODO: rename calculate to evaluate() and make it more generic
+// TODO: -> provide a toBool(const Expr*)
+// TODO: -> provide a toNumber(const Expr*) equivalent
+
 class Expr {
  public:
   explicit Expr(Precedence p);
@@ -323,6 +327,41 @@ class SymbolTable {
  private:
   Map symbols_;
   const SymbolTable* outerScope_;
+};
+
+class CaseExpr : public Expr {
+ public:
+  using CaseMatch = std::pair<std::unique_ptr<Expr>, std::unique_ptr<Expr>>;
+  using CaseList = std::vector<CaseMatch>;
+
+  CaseExpr(CaseList&& cases, std::unique_ptr<Expr>&& elseExpr);
+  CaseExpr(std::unique_ptr<Expr>&& condExpr,
+           std::unique_ptr<Expr>&& trueExpr,
+           std::unique_ptr<Expr>&& elseExpr);
+
+  const CaseList& cases() const { return cases_; }
+  const Expr* elseExpr() const { return elseExpr_.get(); }
+
+  std::string str() const override;
+  Number calculate(const SymbolTable& t) const override;
+  std::unique_ptr<Expr> clone() const override;
+  bool compare(const Expr* other) const override;
+
+ private:
+  CaseList cases_;
+  std::unique_ptr<Expr> elseExpr_;
+};
+
+class CompoundExpr : public Expr {
+ public:
+  using ExprList = std::vector<std::unique_ptr<Expr>>;
+
+  explicit CompoundExpr(ExprList&& expressions);
+
+  const ExprList& expressions() const { return expressions_; }
+
+ private:
+  ExprList expressions_;
 };
 
 std::ostream& operator<<(std::ostream& os, const Expr* expr);
