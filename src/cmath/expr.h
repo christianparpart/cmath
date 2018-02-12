@@ -255,6 +255,20 @@ class FunctionDef : public Def {
   virtual Number call(const SymbolTable& t, const NumberList& inputs) const = 0;
 };
 
+class NativeFunctionDefEx : public FunctionDef {
+ public:
+  using result_type = std::unique_ptr<Expr>;
+  using Impl = std::function<result_type(const Expr*)>;
+
+  explicit NativeFunctionDef(Impl impl);
+
+  Number call(const SymbolTable& t, std::vector<const Expr*>& args) const;
+  std::string str() const override;
+
+ private:
+  Impl impl_;
+};
+
 class NativeFunctionDef : public FunctionDef {
  public:
   using Impl = std::function<Number(Number)>;
