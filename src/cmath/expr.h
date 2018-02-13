@@ -260,9 +260,9 @@ class NativeFunctionDefEx : public FunctionDef {
   using result_type = std::unique_ptr<Expr>;
   using Impl = std::function<result_type(const Expr*)>;
 
-  explicit NativeFunctionDef(Impl impl);
+  explicit NativeFunctionDefEx(Impl impl);
 
-  Number call(const SymbolTable& t, std::vector<const Expr*>& args) const;
+  Number call(const SymbolTable& t, const NumberList& args) const override;
   std::string str() const override;
 
  private:
