@@ -54,26 +54,26 @@ cmath_test_LDADD = \
 
 ####### bin ###################################################################
 
-bin_PROGRAMS += cmathi
+bin_PROGRAMS += cm
 
-cmathi_CXXFLAGS = \
+cm_CXXFLAGS = \
 	-I$(top_srcdir)/src \
 	$(AM_CXXFLAGS)
 
-cmathi_LDADD = \
+cm_LDADD = \
 	libcmath.a \
 	$(BASE_LDFLAGS) \
 	$(AM_LDFLAGS)
 
 if EDITLINE
-cmathi_LDADD += $(EDITLINE_LIBS)
+cm_LDADD += $(EDITLINE_LIBS)
 else
-cmathi_LDADD += $(READLINE_LIBS)
+cm_LDADD += $(READLINE_LIBS)
 endif
 
-cmathi_SOURCES = \
-	src/cmathi/console.cc \
-	src/cmathi/main.cc
+cm_SOURCES = \
+	src/cm/console.cc \
+	src/cm/main.cc
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libcmath.pc
