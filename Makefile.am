@@ -28,7 +28,8 @@ lib_LIBRARIES += libcmath.a
 
 libcmath_a_SOURCES = \
 	src/cmath/expr.cc \
-	src/cmath/expr_parser.cc
+	src/cmath/expr_parser.cc \\
+	src/cmath/real.cc
 
 libcmathdir = $(includedir)
 nobase_libcmath_HEADERS = \
@@ -46,7 +47,8 @@ TESTS += cmath_test
 check_PROGRAMS += cmath_test
 
 cmath_test_SOURCES = \
-	src/cmath/expr_test.cc
+	src/cmath/expr_test.cc \
+	src/cmath/real_test.cc
 
 cmath_test_LDADD = \
 	libcmath.a \
