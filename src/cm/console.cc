@@ -25,15 +25,16 @@ Readline::~Readline() {
   write_history(histfile_.c_str());
 }
 
-std::tuple<bool, std::string> Readline::getline(const char* prompt) {
+bool Readline::getline(const char* prompt, std::string *output) {
   char* line = readline(prompt);
   if (!line)
-    return {true, ""};
+    return true;
 
   if (*line)
     addHistory(line);
 
-  return {false, line};
+  *output = line;
+  return false;
 }
 
 void Readline::addHistory(const std::string& line) {

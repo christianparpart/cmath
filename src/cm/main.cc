@@ -74,8 +74,10 @@ int main(int argc, const char* argv[]) {
     std::cout << "Type ? for help.\n";
 
     for (;;) {
-      auto[eof, line] = input.getline(": ");
+      std::string line;
+      bool eof = input.getline(": ", &line);
       if (eof || line == "quit") {
+        std::cout << "Bye." << std::endl;
         return 0;
       }
 
