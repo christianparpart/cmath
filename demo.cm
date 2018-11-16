@@ -1,0 +1,30 @@
+# vim:syntax=cm
+
+abs : (x) -> when x > 0 then x
+             when x < 0 then -x
+             else 0
+
+sgn : (x) -> when x < 0 then -1
+             else 1
+
+ggT : (a: R, b: R) -> TODO # must be able to implement ggT
+
+# Modulo Arithmetic: addition
+Mod : [X] -> int # parametrized type
++ : (a: Mod[X], b: Mod[X]) -> (a + b) mod X
+* : (a: Mod[X], b: Mod[X]) -> (a * b) mod X
+
+# defining some functions
+f : x -> 2x^3 - 3x^2 + x + 1
+g : x -> -x
+
+# vector scalar multiplication
+* : (x: R, v: R[]) -> x * i for i in b
+# vector addition
++ : (v: R[int], w: R[int]) -> a + b for a, b in v, w
+
+# applies 42 to map f
+f(42)
+
+# sets new const to (1, 1, 1), performing vector addition (as defined above)
+linear_comb := (1, 0, 0) + (0, 1, 0) + (0, 0, 1)
