@@ -37,17 +37,17 @@ void injectStandardSymbols(SymbolTable* st) {
   st->defineConstant(u8"π", std::acos(-1));
   st->defineConstant("nan", std::nan(""));
 
-  st->defineFunction("Re", [](Number x) { return x.real(); });
-  st->defineFunction("Im", [](Number x) { return x.imag(); });
-  st->defineFunction("arg", [](Number x) { return std::arg(x); });
-  st->defineFunction("sin", [](Number x) { return std::sin(x); });
-  st->defineFunction("cos", [](Number x) { return std::cos(x); });
-  st->defineFunction("tan", [](Number x) { return std::tan(x); });
-  st->defineFunction("exp", [](Number x) { return std::exp(x); });
-  st->defineFunction("sqrt", [](Number x) { return std::sqrt(x); });
-  st->defineFunction("log", [](Number x) { return std::log(x); });
+  st->defineMapping("Re", [](Number x) { return x.real(); });
+  st->defineMapping("Im", [](Number x) { return x.imag(); });
+  st->defineMapping("arg", [](Number x) { return std::arg(x); });
+  st->defineMapping("sin", [](Number x) { return std::sin(x); });
+  st->defineMapping("cos", [](Number x) { return std::cos(x); });
+  st->defineMapping("tan", [](Number x) { return std::tan(x); });
+  st->defineMapping("exp", [](Number x) { return std::exp(x); });
+  st->defineMapping("sqrt", [](Number x) { return std::sqrt(x); });
+  st->defineMapping("log", [](Number x) { return std::log(x); });
 
-  st->defineFunction("polar", [](Number a, Number b) { return std::polar(a.real(), b.real()); });
+  st->defineMapping("polar", [](Number a, Number b) { return std::polar(a.real(), b.real()); });
 }
 
 void dumpSymbols(const SymbolTable& symbolTable) {

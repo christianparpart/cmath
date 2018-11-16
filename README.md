@@ -11,7 +11,6 @@ related sciences.
 
 ### Core Functions
 
-
 ### Frontends
 
 It should be able to render to different frontends, such as: OS-native widgets,
@@ -20,23 +19,25 @@ Web, LaTeX, and plain text.
 ### SYNTAX:
 
 ```
-SYMBOL            ::=
-NUMBER            ::=
+SYMBOL            ::= [a-zA-Z]+
+NUMBER            ::= [1-9][0-9]*
 ```
 
 ```
-Program           ::= (VarDecl | FunctionDecl | StmtExpr)*
+Program           ::= (ConstDef | MappingDef | StmtExpr)*
 
-VarDecl           ::= 'let' SYMBOL '=' StmtExpr
-
-FunctionDecl      ::= SYMBOL ':' FunctionParamList '->' Expr
-FunctionParamList ::= SYMBOL | '(' SYMBOL (',' SYMBOL)* ')'
+ConstDef          ::= SYMBOL ':=' StmtExpr
+MappingDef        ::= SYMBOL ':' MappingParamList '->' Expr
+MappingParamList  ::= SYMBOL | '(' SYMBOL (',' SYMBOL)* ')'
 
 Expr              ::= StmtExpr
 
 StmtExpr          ::= IfStmt | CaseStmt | CompoundStmt | ArithExpr
 IfStmt            ::= 'if' RelExpr 'then' Expr 'else' Expr
 CaseStmt          ::= 'case' Expr ('when' Expr 'then' Expr)* ['else' Expr]
+CaseStmt          ::= CaseWhenClause CaseWhenClause* CaseElseClause
+CaseWhenClause    ::= 'when' Expr 'then' Expr
+CaseElseClause    ::= 'else' Expr
 CompoundStmt      ::= '{' (Expr (LF | ';'))* Expr '}'
 
 SolveExpr         ::= `solve' equExpr 'for' variableExpr

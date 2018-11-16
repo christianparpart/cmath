@@ -1,5 +1,5 @@
 
-### Ideas
+## Ideas
 
 - expressions
   - calculate (in R and C)
@@ -12,14 +12,22 @@
   - dot-file
   - SVG
 
-### language
+## language
 
 ```!R
 ?
-vars
+consts
 2+3*4
 cos(pi/2) + i * sin(pi/2)
-x := 2 + 3*4
-f : x -> 2*x
 ```
 
+### Constant Definition
+```
+x := 2 + 3*4
+```
+
+### Mapping Definition
+```
+f : x -> 2*x
+g : (a, b) -> a + b
+```

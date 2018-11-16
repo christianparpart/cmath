@@ -392,18 +392,18 @@ void SymbolTable::defineConstant(const Symbol& name, Number value) {
   }
 }
 
-void SymbolTable::defineFunction(const Symbol& name, NativeFunctionDef::Impl impl) {
-  symbols_[name] = std::make_unique<NativeFunctionDef>(impl);
+void SymbolTable::defineFunction(const Symbol& name, NativeMappingDef::Impl impl) {
+  symbols_[name] = std::make_unique<NativeMappingDef>(impl);
 }
 
-void SymbolTable::defineFunction(const Symbol& name, NativeFunction2Def::Impl impl) {
-  symbols_[name] = std::make_unique<NativeFunction2Def>(impl);
+void SymbolTable::defineFunction(const Symbol& name, NativeMapping2Def::Impl impl) {
+  symbols_[name] = std::make_unique<NativeMapping2Def>(impl);
 }
 
 void SymbolTable::defineFunction(const Symbol& name,
-                                 const CustomFunctionDef::SymbolList& inputs,
+                                 const CustomMappingDef::SymbolList& inputs,
                                  std::unique_ptr<Expr>&& impl) {
-  symbols_[name] = std::make_unique<CustomFunctionDef>(inputs, std::move(impl));
+  symbols_[name] = std::make_unique<CustomMappingDef>(inputs, std::move(impl));
 }
 
 void SymbolTable::undefine(const Symbol& name) {
@@ -425,17 +425,17 @@ const Def* SymbolTable::lookup(const Symbol& name) const {
 }
 // }}}
 // {{{ CallExpr
-CallExpr::CallExpr(const std::string& name, const FunctionDef* f, ParamList&& inputs)
-    : Expr(Precedence::Primary), symbolName_(name), function_(f),
+CallExpr::CallExpr(const std::string& name, const MappingDef* f, ParamList&& inputs)
+    : Expr(Precedence::Primary), symbolName_(name), mapping_(f),
       inputs_(std::move(inputs)) {}
 
 Number CallExpr::calculate(const SymbolTable& t) const {
-  FunctionDef::NumberList args;
+  MappingDef::NumberList args;
   args.resize(inputs_.size());
   for (size_t i = 0, e = inputs_.size(); i != e; ++i)
     args[i] = inputs_[i]->calculate(t);
 
-  return function_->call(t, args);
+  return mapping_->call(t, args);
 }
 
 std::string CallExpr::str() const {
@@ -456,12 +456,12 @@ std::unique_ptr<Expr> CallExpr::clone() const {
   for (int i = 0, e = inputs_.size(); i != e; ++i)
     args[i] = inputs_[i]->clone();
 
-  return std::make_unique<CallExpr>(symbolName_, function_, std::move(args));
+  return std::make_unique<CallExpr>(symbolName_, mapping_, std::move(args));
 }
 
 bool CallExpr::compare(const Expr* other) const {
   if (auto otherCall = dynamic_cast<const CallExpr*>(other)) {
-    if (otherCall->function_ == function_) {
+    if (otherCall->mapping_ == mapping_) {
       for (int i = 0, e = inputs_.size(); i != e; ++i) {
         if (!inputs_[i]->compare(otherCall->inputs_[i].get())) {
           return false;
@@ -490,34 +490,34 @@ std::string ConstantDef::str() const {
   return s.str();
 }
 // }}}
-// {{{ NativeFunctionDef
-NativeFunctionDef::NativeFunctionDef(Impl impl) : impl_(impl) {}
+// {{{ NativeMappingDef
+NativeMappingDef::NativeMappingDef(Impl impl) : impl_(impl) {}
 
-Number NativeFunctionDef::call(const SymbolTable& t, const NumberList& input) const {
+Number NativeMappingDef::call(const SymbolTable& t, const NumberList& input) const {
     return impl_(input[0]);
 }
 
-std::string NativeFunctionDef::str() const {
+std::string NativeMappingDef::str() const {
   return "(x) -> native";
 }
 // }}}
-// {{{ NativeFunction2Def
-NativeFunction2Def::NativeFunction2Def(Impl impl) : impl_(impl) {}
+// {{{ NativeMapping2Def
+NativeMapping2Def::NativeMapping2Def(Impl impl) : impl_(impl) {}
 
-Number NativeFunction2Def::call(const SymbolTable& t, const NumberList& input) const {
+Number NativeMapping2Def::call(const SymbolTable& t, const NumberList& input) const {
     return impl_(input[0], input[1]);
 }
 
-std::string NativeFunction2Def::str() const {
+std::string NativeMapping2Def::str() const {
   return "(x1, x2) -> native";
 }
 // }}}
-// {{{ CustomFunctionDef
-CustomFunctionDef::CustomFunctionDef(const SymbolList& inputs,
+// {{{ CustomMappingDef
+CustomMappingDef::CustomMappingDef(const SymbolList& inputs,
                                      std::unique_ptr<Expr>&& expr)
     : inputs_(inputs), expr_(std::move(expr)) {}
 
-Number CustomFunctionDef::call(const SymbolTable& t, const NumberList& inputs) const {
+Number CustomMappingDef::call(const SymbolTable& t, const NumberList& inputs) const {
   SymbolTable st(&t);
 
   for (size_t i = 0, e = inputs_.size(); i != e; ++i)
@@ -526,7 +526,7 @@ Number CustomFunctionDef::call(const SymbolTable& t, const NumberList& inputs) c
   return expr_->calculate(t);
 }
 
-std::string CustomFunctionDef::str() const {
+std::string CustomMappingDef::str() const {
   std::stringstream s;
 
   s << "(";

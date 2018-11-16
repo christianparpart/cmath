@@ -127,13 +127,17 @@ class ExprParser {
   bool tryConsumeToken(Token t);
   Number consumeNumber();
 
+  std::unique_ptr<Program> program();
+  std::unique_ptr<ConstDef> constDef();      // A := 1.234
+  std::unique_ptr<MappingDef> mappingDef();  // f : (a, b) -> a + b
   std::unique_ptr<Expr> expr();
-  std::unique_ptr<Expr> relExpr();      // < > = != <= >=
-  std::unique_ptr<Expr> addExpr();      // + -
-  std::unique_ptr<Expr> mulExpr();      // * /
-  std::unique_ptr<Expr> facExpr();      // !
-  std::unique_ptr<Expr> powExpr();      // ^
-  std::unique_ptr<Expr> primaryExpr();  // number symbol ( ! -
+  std::unique_ptr<Expr> caseExpr();
+  std::unique_ptr<Expr> relExpr();           // < > = != <= >=
+  std::unique_ptr<Expr> addExpr();           // + -
+  std::unique_ptr<Expr> mulExpr();           // * /
+  std::unique_ptr<Expr> facExpr();           // !
+  std::unique_ptr<Expr> powExpr();           // ^
+  std::unique_ptr<Expr> primaryExpr();       // number symbol ( ! -
 
  private:
   const SymbolTable& symbolTable_;

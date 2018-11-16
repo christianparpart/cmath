@@ -441,7 +441,7 @@ std::unique_ptr<Expr> ExprParser::primaryExpr() {
       if (const ConstantDef* n = dynamic_cast<const ConstantDef*>(def))
         return std::make_unique<SymbolExpr>(name, n);
 
-      if (const FunctionDef* f = dynamic_cast<const FunctionDef*>(def)) {
+      if (const MappingDef* f = dynamic_cast<const MappingDef*>(def)) {
         // parse ['^' primaryExpr ] ('(' expr (',' expr)* ')'
         //                          |    expr (',' expr)* )
         std::unique_ptr<Expr> power;

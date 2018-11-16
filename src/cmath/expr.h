@@ -17,10 +17,50 @@
 
 namespace cmath {
 
+// TODO: rename calculate to evaluate() and make it more generic
+// TODO: -> provide a toBool(const Expr*)
+// TODO: -> provide a toNumber(const Expr*) equivalent
+// TODO: rewrite AST as specified below
+
+/*
+	SymbolTable
+	ASTNode
+		Unit
+		Expr
+			NumberExpr
+			TupleExpr
+			SymbolRefExpr
+			CallExpr
+			AddExpr
+			AddInvExpr
+			MulExpr
+			MulInvExpr
+			PowExpr
+			FacExpr
+			RelationExpr
+				EquRelExpr
+				NotEquRelExpr
+				LessRelExpr
+				GreaterRelExpr
+				LessEquRelExpr
+				GreaterRelExpr
+		Symbol
+			Constant
+			Mapping
+				Builtin1Mapping (one arg)
+				Builtin2Mapping (two args)
+				CustomMapping
+ */
+
 class SymbolTable;
 
+class ASTNode {
+ public:
+  virtual ~ASTNode() = default;
+};
+
 using Number = std::complex<double>;
-using Symbol = std::string;
+using Name = std::string;
 
 enum class Precedence {
   Relation,        // < > <= >= != =
@@ -30,11 +70,7 @@ enum class Precedence {
   Primary,         // 42 x a b
 };
 
-// TODO: rename calculate to evaluate() and make it more generic
-// TODO: -> provide a toBool(const Expr*)
-// TODO: -> provide a toNumber(const Expr*) equivalent
-
-class Expr {
+class Expr : public ASTNode {
  public:
   explicit Expr(Precedence p);
   virtual ~Expr() {}
@@ -209,13 +245,13 @@ class DefineExpr : public BinaryExpr {
   bool compare(const Expr* other) const override;
 };
 
-class FunctionDef;
+class MappingDef;
 
 class CallExpr : public Expr {
  public:
   using ParamList = std::vector<std::unique_ptr<Expr>>;
 
-  CallExpr(const std::string& symbolName, const FunctionDef* f, ParamList&& inputs);
+  CallExpr(const std::string& symbolName, const MappingDef* f, ParamList inputs);
 
   Number calculate(const SymbolTable& t) const override;
   std::string str() const override;
@@ -224,7 +260,7 @@ class CallExpr : public Expr {
 
  private:
   std::string symbolName_;
-  const FunctionDef* function_;
+  const MappingDef* mapping_;
   ParamList inputs_;
 };
 
@@ -249,19 +285,19 @@ class ConstantDef : public Def {
   Number number_;
 };
 
-class FunctionDef : public Def {
+class MappingDef : public Def {
  public:
   using NumberList = std::vector<Number>;
 
   virtual Number call(const SymbolTable& t, const NumberList& inputs) const = 0;
 };
 
-class NativeFunctionDefEx : public FunctionDef {
+class NativeMappingDefEx : public MappingDef {
  public:
   using result_type = std::unique_ptr<Expr>;
   using Impl = std::function<result_type(const Expr*)>;
 
-  explicit NativeFunctionDefEx(Impl impl);
+  explicit NativeMappingDefEx(Impl impl);
 
   Number call(const SymbolTable& t, const NumberList& args) const override;
   std::string str() const override;
@@ -270,11 +306,11 @@ class NativeFunctionDefEx : public FunctionDef {
   Impl impl_;
 };
 
-class NativeFunctionDef : public FunctionDef {
+class NativeMappingDef : public MappingDef {
  public:
   using Impl = std::function<Number(Number)>;
 
-  explicit NativeFunctionDef(Impl impl);
+  explicit NativeMappingDef(Impl impl);
 
   Number call(const SymbolTable& t, const NumberList& inputs) const override;
   std::string str() const override;
@@ -283,11 +319,11 @@ class NativeFunctionDef : public FunctionDef {
   Impl impl_;
 };
 
-class NativeFunction2Def : public FunctionDef {
+class NativeMapping2Def : public MappingDef {
  public:
   using Impl = std::function<Number(Number, Number)>;
 
-  explicit NativeFunction2Def(Impl impl);
+  explicit NativeMapping2Def(Impl impl);
 
   Number call(const SymbolTable& t, const NumberList& inputs) const override;
   std::string str() const override;
@@ -296,11 +332,11 @@ class NativeFunction2Def : public FunctionDef {
   Impl impl_;
 };
 
-class CustomFunctionDef : public FunctionDef {
+class CustomMappingDef : public MappingDef {
  public:
   using SymbolList = std::vector<Symbol>;
 
-  CustomFunctionDef(const SymbolList& inputs, std::unique_ptr<Expr>&& expression);
+  CustomMappingDef(const SymbolList& inputs, std::unique_ptr<Expr>&& expression);
 
   Number call(const SymbolTable& t, const NumberList& inputs) const override;
   std::string str() const override;
@@ -310,17 +346,26 @@ class CustomFunctionDef : public FunctionDef {
   std::unique_ptr<Expr> expr_;
 };
 
+class ConstDef {
+ public:
+  ConstDef(std::string symbol, std::unique_ptr<Expr>);
+
+ private:
+  std::string symbol_;
+  std::unique_ptr<Expr> expr_;
+};
+
 class SymbolTable {
  public:
   SymbolTable();
   explicit SymbolTable(const SymbolTable* outerScope);
 
   void defineConstant(const Symbol& name, Number value);
-  void defineFunction(const Symbol& name, NativeFunctionDef::Impl impl);
-  void defineFunction(const Symbol& name, NativeFunction2Def::Impl impl);
-  void defineFunction(const Symbol& name,
-                      const CustomFunctionDef::SymbolList& inputs,
-                      std::unique_ptr<Expr>&& impl);
+  void defineMapping(const Symbol& name, NativeMappingDef::Impl impl);
+  void defineMapping(const Symbol& name, NativeMapping2Def::Impl impl);
+  void defineMapping(const Symbol& name,
+                     const CustomMappingDef::SymbolList& inputs,
+                     std::unique_ptr<Expr>&& impl);
 
   void undefine(const Symbol& name);
 
@@ -342,6 +387,15 @@ class SymbolTable {
  private:
   Map symbols_;
   const SymbolTable* outerScope_;
+};
+
+class Program {
+ public:
+  Program();
+
+ private:
+  std::vector<std::unique_ptr<ConstDef>> consts_;
+  std::vector<std::unique_ptr<MappingDef>> mappings_;
 };
 
 class CaseExpr : public Expr {
