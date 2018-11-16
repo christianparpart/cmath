@@ -1,0 +1,27 @@
+# -----------------------------------------------------------------------------
+- builtin types:
+  - N (natural numbers)
+  - Q (rational numbers)
+  - R (real numbers)
+  - C (complex numbers)
+  - TYPE ('^' NUMBER)*      ; N-dimensional type (array of given type with N elements)
+- builtin types:
+  - expression
+  - polynom
+  - equation
+  - inequation
+- custom set:
+  - set
+- builtins:
+  - Simplify(expr)
+  - Expand(expr)
+  - Factor(expr)
+  - Plus(summands: array of C)
+  - Multiply(a, b: array of C)
+  - Solve(polynom)
+
+# -----------------------------------------------------------------------------
+# EXAMPLES
+f: (x) -> 2 x
+
+simplify(f)
