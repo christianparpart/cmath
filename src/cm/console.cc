@@ -9,7 +9,7 @@
 #include <cmath/sysconfig.h>
 #include <stdio.h>
 
-#if HAVE_EDITLINE_READLINE_H
+#if defined(HAVE_EDITLINE_READLINE_H)
 #include <editline/readline.h>
 #else
 #include <readline/history.h>
