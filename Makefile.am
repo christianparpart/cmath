@@ -28,7 +28,7 @@ lib_LIBRARIES += libcmath.a
 
 libcmath_a_SOURCES = \
 	src/cmath/expr.cc \
-	src/cmath/expr_parser.cc \\
+	src/cmath/expr_parser.cc \
 	src/cmath/real.cc
 
 libcmathdir = $(includedir)

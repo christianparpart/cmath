@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#if 0
 class Ratio {
  public:
  private:
@@ -32,3 +33,4 @@ Real operator-(Real a, Real b);
 Real operator*(Real a, Real b);
 Real operator/(Real a, Real b);
 
+#endif

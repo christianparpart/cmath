@@ -1,5 +1,7 @@
 #include <cmath/real.h>
 
+#if 0
+
 Real::Real(long long nominator, unsigned long long denominator) {
   // TODO
 }
@@ -50,3 +52,4 @@ std::ostream& Real::operator<<(std::ostream& os) {
   return *this;
 }
 
+#endif
